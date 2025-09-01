@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 
 PanelWindow {
     id: window
@@ -17,6 +18,18 @@ PanelWindow {
     implicitWidth: 500
     implicitHeight: 320
     color: "transparent"
+    
+    HyprlandFocusGrab {
+        id: focusGrab
+        windows: [window]
+        active: true
+        
+        
+        onCleared: {
+            console.log("🔴 Focus grab cleared - dismissing overlay")
+            window.dismissed()
+        }
+    }
     
     Rectangle {
         anchors.fill: parent
@@ -108,32 +121,50 @@ PanelWindow {
             anchors.fill: parent
             focus: true
             
+            onFocusChanged: console.log("🎯 keyHandler focus changed:", focus)
+            onActiveFocusChanged: console.log("🎯 keyHandler activeFocus changed:", activeFocus)
+            
             Keys.onPressed: function(event) {
-                console.log("Key pressed:", event.key)
+                console.log("🔵 Key pressed:", event.key, "Current index:", window.currentIndex, "Snippets count:", snippets.length)
                 switch (event.key) {
                 case Qt.Key_Escape:
+                    console.log("🔴 Escape pressed - dismissing overlay")
                     window.dismissed()
                     event.accepted = true
                     break
                 case Qt.Key_Up:
+                    console.log("🔼 Up arrow pressed - current index:", window.currentIndex)
                     if (window.currentIndex > 0) {
                         window.currentIndex--
+                        console.log("✅ Moved up to index:", window.currentIndex)
+                    } else {
+                        console.log("⚠️ Already at top, cannot move up")
                     }
                     event.accepted = true
                     break
                 case Qt.Key_Down:
+                    console.log("🔽 Down arrow pressed - current index:", window.currentIndex)
                     if (window.currentIndex < snippets.length - 1) {
                         window.currentIndex++
+                        console.log("✅ Moved down to index:", window.currentIndex)
+                    } else {
+                        console.log("⚠️ Already at bottom, cannot move down")
                     }
                     event.accepted = true
                     break
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
+                    console.log("🟢 Enter pressed - selecting snippet at index:", window.currentIndex)
                     if (window.currentIndex >= 0 && window.currentIndex < snippets.length) {
-                        console.log("Enter pressed, selecting snippet", window.currentIndex)
+                        console.log("✅ Selecting snippet:", snippets[window.currentIndex].title)
                         window.snippetSelected(snippets[window.currentIndex])
+                    } else {
+                        console.log("❌ Invalid index for selection")
                     }
                     event.accepted = true
+                    break
+                default:
+                    console.log("🔸 Unhandled key:", event.key)
                     break
                 }
             }
@@ -142,6 +173,18 @@ PanelWindow {
     
     Component.onCompleted: {
         console.log("OverlayWindow: Created with", snippets.length, "snippets")
+        console.log("🎯 Setting focus to keyHandler")
+        // Try multiple approaches to gain active focus
+        keyHandler.focus = true
         keyHandler.forceActiveFocus()
+        Qt.callLater(function() {
+            keyHandler.forceActiveFocus()
+            console.log("🎯 After callLater - keyHandler focus:", keyHandler.focus)
+            console.log("🎯 After callLater - keyHandler activeFocus:", keyHandler.activeFocus)
+        })
+        console.log("🎯 keyHandler focus:", keyHandler.focus)
+        console.log("🎯 keyHandler activeFocus:", keyHandler.activeFocus)
+        console.log("🎯 window focus:", window.focus)
+        console.log("🎯 window activeFocus:", window.activeFocus)
     }
 }

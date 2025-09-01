@@ -130,6 +130,8 @@ qs -p shell.qml --verbose
 wtype "Hello from snippet manager!"
 ```
 
+**IMPORTANT**: Always test changes by running `./snippet-manager` after making modifications to ensure the application loads correctly.
+
 ### Hyprland Integration
 ```bash
 # Add to hyprland.conf (recommended)
