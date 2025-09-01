@@ -15,15 +15,15 @@ PanelWindow {
     exclusiveZone: 0
     
     implicitWidth: 500
-    implicitHeight: 400
+    implicitHeight: 320
     color: "transparent"
     
     Rectangle {
         anchors.fill: parent
         color: "#1a1a1a"
-        border.color: "#ffaa00"
-        border.width: 3
-        radius: 12
+        border.color: "#666666"
+        border.width: 1
+        radius: 8
         
         Text {
             id: header
@@ -32,7 +32,7 @@ PanelWindow {
             anchors.right: parent.right
             anchors.margins: 20
             height: 40
-            text: "📝 Snippet Manager (" + snippets.length + " snippets)"
+            text: "Snippet Manager (" + snippets.length + " snippets)"
             color: "#ffffff"
             font.pixelSize: 18
             font.bold: true
@@ -55,48 +55,22 @@ PanelWindow {
                 
                 Rectangle {
                     width: snippetColumn.width
-                    height: 70
-                    color: index === window.currentIndex ? "#0066cc" : "#3a3a3a"
-                    border.color: index === window.currentIndex ? "#66aaff" : "#666666"
-                    border.width: 2
-                    radius: 8
+                    height: 35
+                    color: index === window.currentIndex ? "#444444" : "#2a2a2a"
+                    border.color: index === window.currentIndex ? "#ffffff" : "#555555"
+                    border.width: 1
+                    radius: 6
                     
-                    Row {
+                    Text {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.margins: 15
-                        spacing: 10
-                        
-                        Text {
-                            text: (index + 1)
-                            color: index === window.currentIndex ? "#ffcc00" : "#aaaaaa"
-                            font.pixelSize: 20
-                            font.bold: true
-                            width: 30
-                        }
-                        
-                        Column {
-                            width: parent.width - 50
-                            spacing: 5
-                            
-                            Text {
-                                text: modelData.title || "Untitled"
-                                color: index === window.currentIndex ? "#ffffff" : "#dddddd"
-                                font.pixelSize: 14
-                                font.bold: true
-                                width: parent.width
-                                elide: Text.ElideRight
-                            }
-                            
-                            Text {
-                                text: (modelData.content || "").substring(0, 60) + "..."
-                                color: index === window.currentIndex ? "#cccccc" : "#999999"
-                                font.pixelSize: 11
-                                width: parent.width
-                                elide: Text.ElideRight
-                            }
-                        }
+                        text: modelData.title || "Untitled"
+                        color: index === window.currentIndex ? "#ffffff" : "#cccccc"
+                        font.pixelSize: 14
+                        font.bold: false
+                        elide: Text.ElideRight
                     }
                     
                     MouseArea {
