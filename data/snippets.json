@@ -1,0 +1,28 @@
+[
+	{
+		"id": "greeting-hello",
+		"title": "Hello greeting",
+		"content": "Hello! How are you doing today?"
+	},
+	{
+		"id": "email-signature",
+		"title": "Email signature",
+		"content": "Best regards,\nJohn Doe\nSoftware Developer\njohn.doe@email.com"
+	},
+	{
+		"id": "code-function",
+		"title": "JavaScript function template",
+		"content": "function functionName() {\n    // TODO: Implement function logic\n    return;\n}"
+	},
+	{
+		"id": "meeting-template",
+		"title": "Meeting notes template",
+		"content": "## Meeting Notes - [Date]\n\n### Attendees\n- \n\n### Agenda\n- \n\n### Action Items\n- \n\n### Next Steps\n- "
+	},
+	{
+		"id": "git-commit",
+		"title": "Git commit message template",
+		"content": "feat: add new feature\n\n- Implement core functionality\n- Add unit tests\n- Update documentation"
+	}
+]
+

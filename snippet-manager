@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# QuickShell Snippet Manager
+# Simple startup script for easy testing and Hyprland integration
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SHELL_QML="$SCRIPT_DIR/shell.qml"
+
+# Check if QuickShell is installed
+if ! command -v qs &> /dev/null; then
+    echo "Error: QuickShell (qs) is not installed or not in PATH"
+    exit 1
+fi
+
+# Check if wtype is installed
+if ! command -v wtype &> /dev/null; then
+    echo "Error: wtype is not installed or not in PATH"
+    echo "Install with: sudo pacman -S wtype"
+    exit 1
+fi
+
+# Check if shell.qml exists
+if [ ! -f "$SHELL_QML" ]; then
+    echo "Error: shell.qml not found at $SHELL_QML"
+    exit 1
+fi
+
+echo "Starting QuickShell Snippet Manager..."
+echo "File: $SHELL_QML"
+echo "Overlay will appear automatically..."
+echo ""
+
+# Test if QuickShell can start (check for Qt compatibility issues)
+if ! qs --version &> /dev/null; then
+    echo "Warning: QuickShell has Qt compatibility issues"
+    echo "This is a known issue with some Qt/Wayland versions"
+    echo ""
+    echo "Alternative testing method:"
+    echo "1. Test text injection directly:"
+    echo "   wtype 'Hello from snippet manager!'"
+    echo ""
+    echo "2. Check if global shortcut would work:"
+    echo "   hyprctl globalshortcuts | grep snippet"
+    echo ""
+    echo "3. Add this to your hyprland.conf for manual testing:"
+    echo "   bind = SUPER SHIFT, SPACE, exec, $SCRIPT_DIR/snippet-manager"
+    echo ""
+    echo "The application structure is ready, but requires a working QuickShell installation."
+    exit 1
+fi
+
+# Start QuickShell with verbose logging
+exec qs -p "$SHELL_QML" --verbose
