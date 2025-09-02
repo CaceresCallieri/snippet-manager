@@ -23,9 +23,15 @@ ShellRoot {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
                     try {
-                        root.snippets = JSON.parse(xhr.responseText)
-                        console.log("✅ Loaded " + root.snippets.length + " snippets from JSON file")
-                        root.debugLog("🔍 Snippets loaded: " + JSON.stringify(root.snippets, null, 2))
+                        const parsed = JSON.parse(xhr.responseText)
+                        if (Array.isArray(parsed)) {
+                            root.snippets = parsed
+                            console.log("✅ Loaded " + root.snippets.length + " snippets from JSON file")
+                            root.debugLog("🔍 Snippets loaded: " + JSON.stringify(root.snippets, null, 2))
+                        } else {
+                            console.error("❌ Invalid JSON: expected array, got " + typeof parsed)
+                            root.snippets = []
+                        }
                     } catch (e) {
                         console.error("❌ Failed to parse snippets JSON: " + e.message)
                         root.snippets = []
