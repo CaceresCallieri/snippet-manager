@@ -58,7 +58,9 @@ ShellRoot {
                 property string textToInject
                 command: ["wtype", textToInject]
                 
-                Component.onCompleted: start()
+                Component.onCompleted: {
+                    running = true
+                }
                 
                 onRunningChanged: {
                     if (!running && hasExited) {
