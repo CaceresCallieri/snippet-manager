@@ -32,10 +32,9 @@ A modular snippet manager for Arch Linux Hyprland systems built with QuickShell.
 **Current File Structure**:
 ```
 quickshell-snippet-manager/
-├── snippet-manager             # ✅ Simple startup script
 ├── shell.qml                   # ✅ Main application (ShellRoot + LazyLoader)
 ├── ui/
-│   └── OverlayWindow.qml       # ✅ Simplified overlay with Repeater-based UI
+│   └── OverlayWindow.qml       # ✅ Simplified overlay with conditional debug logging
 ├── services/                   # (Legacy - not currently used)
 │   ├── DataLoader.qml          # (Replaced by embedded data)
 │   ├── TextInjection.qml       # (Replaced by inline Process)
@@ -51,6 +50,8 @@ quickshell-snippet-manager/
 - Direct Process integration for text injection
 - Robust UI using Column + Repeater instead of ListView
 - Auto-quit functionality for launcher-style behavior
+- HyprlandFocusGrab for reliable keyboard input capture
+- Conditional debug logging system with emoji markers
 
 ## Key Requirements
 
@@ -120,35 +121,46 @@ Based on official examples:
 
 ### Development Commands
 ```bash
-# Run snippet manager (recommended)
-./snippet-manager
+# Run snippet manager (normal mode)
+qs -p shell.qml
 
-# Run directly with QuickShell
+# Run with verbose QuickShell logging
+qs -p shell.qml --verbose
+
+# Run with debug mode (requires debugMode: true in shell.qml)
 qs -p shell.qml --verbose
 
 # Test text injection directly
 wtype "Hello from snippet manager!"
 ```
 
-**IMPORTANT**: Always test changes by running `./snippet-manager` after making modifications to ensure the application loads correctly.
+**IMPORTANT**: Always test changes by running `qs -p shell.qml` after making modifications to ensure the application loads correctly.
+
+### Debug Mode
+Toggle debug logging by changing `debugMode: true/false` in shell.qml:
+- **Normal mode**: Clean output, no debug messages
+- **Debug mode**: Comprehensive emoji-marked logging for keyboard navigation, focus management, and user interactions
 
 ### Hyprland Integration
 ```bash
 # Add to hyprland.conf (recommended)
-bind = SUPER SHIFT, SPACE, exec, /absolute/path/to/snippet-manager/snippet-manager
+bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.qml
 ```
 
 ### Known Issues & Current Status
 - ✅ **QuickShell compatibility**: Fixed with quickshell-git package
 - ✅ **UI visibility**: Fixed with high-contrast design and proper Component structure
 - ✅ **Process API**: Fixed by removing non-existent `onErrorOccurred` property
-- ✅ **Keyboard navigation**: Fixed by using Item with Keys instead of PanelWindow directly
-- ⚠️ **Issue noted**: Some UI elements may still need refinement for optimal user experience
+- ✅ **Keyboard navigation**: Fixed with HyprlandFocusGrab for reliable input capture
+- ✅ **Focus management**: Implemented proper focus chain with Qt.callLater for timing
+- ✅ **Debug system**: Working conditional logging with emoji markers for development
 
 ### Current Working Features
 - ✅ Overlay shows immediately on command execution
 - ✅ 5 embedded test snippets visible and selectable
-- ✅ Keyboard navigation (↑/↓ arrows, Enter, Esc)
+- ✅ Keyboard navigation (↑/↓ arrows, Enter, Esc) with HyprlandFocusGrab
 - ✅ Mouse interaction (hover + click)
-- ✅ Text injection via wtype
-- ✅ Auto-exit after selection
+- ✅ Text injection via wtype with proper error handling
+- ✅ Auto-exit after selection or dismissal
+- ✅ Clean UI with subtitle design (no numbers, clean titles)
+- ✅ Debug mode with comprehensive logging system

@@ -7,9 +7,16 @@ PanelWindow {
     
     property var snippets: []
     property int currentIndex: 0
+    property bool debugMode: false
     
     signal snippetSelected(var snippet)
     signal dismissed()
+    
+    function debugLog(message) {
+        if (debugMode) {
+            console.log(message)
+        }
+    }
     
     anchors.top: true
     margins.top: screen.height / 6
@@ -26,7 +33,7 @@ PanelWindow {
         
         
         onCleared: {
-            console.log("🔴 Focus grab cleared - dismissing overlay")
+            window.debugLog("🔴 Focus grab cleared - dismissing overlay")
             window.dismissed()
         }
     }
@@ -121,50 +128,50 @@ PanelWindow {
             anchors.fill: parent
             focus: true
             
-            onFocusChanged: console.log("🎯 keyHandler focus changed:", focus)
-            onActiveFocusChanged: console.log("🎯 keyHandler activeFocus changed:", activeFocus)
+            onFocusChanged: window.debugLog("🎯 keyHandler focus changed: " + focus)
+            onActiveFocusChanged: window.debugLog("🎯 keyHandler activeFocus changed: " + activeFocus)
             
             Keys.onPressed: function(event) {
-                console.log("🔵 Key pressed:", event.key, "Current index:", window.currentIndex, "Snippets count:", snippets.length)
+                window.debugLog("🔵 Key pressed: " + event.key + " Current index: " + window.currentIndex + " Snippets count: " + snippets.length)
                 switch (event.key) {
                 case Qt.Key_Escape:
-                    console.log("🔴 Escape pressed - dismissing overlay")
+                    window.debugLog("🔴 Escape pressed - dismissing overlay")
                     window.dismissed()
                     event.accepted = true
                     break
                 case Qt.Key_Up:
-                    console.log("🔼 Up arrow pressed - current index:", window.currentIndex)
+                    window.debugLog("🔼 Up arrow pressed - current index: " + window.currentIndex)
                     if (window.currentIndex > 0) {
                         window.currentIndex--
-                        console.log("✅ Moved up to index:", window.currentIndex)
+                        window.debugLog("✅ Moved up to index: " + window.currentIndex)
                     } else {
-                        console.log("⚠️ Already at top, cannot move up")
+                        window.debugLog("⚠️ Already at top, cannot move up")
                     }
                     event.accepted = true
                     break
                 case Qt.Key_Down:
-                    console.log("🔽 Down arrow pressed - current index:", window.currentIndex)
+                    window.debugLog("🔽 Down arrow pressed - current index: " + window.currentIndex)
                     if (window.currentIndex < snippets.length - 1) {
                         window.currentIndex++
-                        console.log("✅ Moved down to index:", window.currentIndex)
+                        window.debugLog("✅ Moved down to index: " + window.currentIndex)
                     } else {
-                        console.log("⚠️ Already at bottom, cannot move down")
+                        window.debugLog("⚠️ Already at bottom, cannot move down")
                     }
                     event.accepted = true
                     break
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
-                    console.log("🟢 Enter pressed - selecting snippet at index:", window.currentIndex)
+                    window.debugLog("🟢 Enter pressed - selecting snippet at index: " + window.currentIndex)
                     if (window.currentIndex >= 0 && window.currentIndex < snippets.length) {
-                        console.log("✅ Selecting snippet:", snippets[window.currentIndex].title)
+                        window.debugLog("✅ Selecting snippet: " + snippets[window.currentIndex].title)
                         window.snippetSelected(snippets[window.currentIndex])
                     } else {
-                        console.log("❌ Invalid index for selection")
+                        window.debugLog("❌ Invalid index for selection")
                     }
                     event.accepted = true
                     break
                 default:
-                    console.log("🔸 Unhandled key:", event.key)
+                    window.debugLog("🔸 Unhandled key: " + event.key)
                     break
                 }
             }
@@ -173,18 +180,18 @@ PanelWindow {
     
     Component.onCompleted: {
         console.log("OverlayWindow: Created with", snippets.length, "snippets")
-        console.log("🎯 Setting focus to keyHandler")
+        window.debugLog("🎯 Setting focus to keyHandler")
         // Try multiple approaches to gain active focus
         keyHandler.focus = true
         keyHandler.forceActiveFocus()
         Qt.callLater(function() {
             keyHandler.forceActiveFocus()
-            console.log("🎯 After callLater - keyHandler focus:", keyHandler.focus)
-            console.log("🎯 After callLater - keyHandler activeFocus:", keyHandler.activeFocus)
+            window.debugLog("🎯 After callLater - keyHandler focus: " + keyHandler.focus)
+            window.debugLog("🎯 After callLater - keyHandler activeFocus: " + keyHandler.activeFocus)
         })
-        console.log("🎯 keyHandler focus:", keyHandler.focus)
-        console.log("🎯 keyHandler activeFocus:", keyHandler.activeFocus)
-        console.log("🎯 window focus:", window.focus)
-        console.log("🎯 window activeFocus:", window.activeFocus)
+        window.debugLog("🎯 keyHandler focus: " + keyHandler.focus)
+        window.debugLog("🎯 keyHandler activeFocus: " + keyHandler.activeFocus)
+        window.debugLog("🎯 window focus: " + window.focus)
+        window.debugLog("🎯 window activeFocus: " + window.activeFocus)
     }
 }

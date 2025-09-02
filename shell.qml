@@ -7,6 +7,8 @@ ShellRoot {
     id: root
     
     property bool shouldShowOverlay: true
+    // Debug mode toggle - change this to true/false as needed
+    property bool debugMode: true
     property var snippets: [
         {
             "id": "greeting-hello",
@@ -80,6 +82,7 @@ ShellRoot {
         
         UI.OverlayWindow {
             snippets: root.snippets
+            debugMode: root.debugMode
             
             onSnippetSelected: function(snippet) {
                 console.log("📋 Selected snippet:", snippet.title)
