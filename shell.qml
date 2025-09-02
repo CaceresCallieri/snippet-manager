@@ -9,33 +9,36 @@ ShellRoot {
     property bool shouldShowOverlay: true
     // Debug mode toggle - change this to true/false as needed
     property bool debugMode: true
-    property var snippets: [
-        {
-            "id": "greeting-hello",
-            "title": "Hello greeting",
-            "content": "Hello! How are you doing today?"
-        },
-        {
-            "id": "email-signature", 
-            "title": "Email signature",
-            "content": "Best regards,\nJohn Doe\nSoftware Developer\njohn.doe@email.com"
-        },
-        {
-            "id": "code-function",
-            "title": "JavaScript function template", 
-            "content": "function functionName() {\n    // TODO: Implement function logic\n    return;\n}"
-        },
-        {
-            "id": "meeting-template",
-            "title": "Meeting notes template",
-            "content": "## Meeting Notes - [Date]\n\n### Attendees\n- \n\n### Agenda\n- \n\n### Action Items\n- \n\n### Next Steps\n- "
-        },
-        {
-            "id": "git-commit",
-            "title": "Git commit message template",
-            "content": "feat: add new feature\n\n- Implement core functionality\n- Add unit tests\n- Update documentation"
+    property var snippets: []
+    
+    function debugLog(message) {
+        if (debugMode) {
+            console.log(message)
         }
-    ]
+    }
+    
+    function loadSnippets() {
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    try {
+                        root.snippets = JSON.parse(xhr.responseText)
+                        console.log("✅ Loaded " + root.snippets.length + " snippets from JSON file")
+                        root.debugLog("🔍 Snippets loaded: " + JSON.stringify(root.snippets, null, 2))
+                    } catch (e) {
+                        console.error("❌ Failed to parse snippets JSON: " + e.message)
+                        root.snippets = []
+                    }
+                } else {
+                    console.error("❌ Failed to load snippets file. Status: " + xhr.status)
+                    root.snippets = []
+                }
+            }
+        }
+        xhr.open("GET", "data/snippets.json")
+        xhr.send()
+    }
     
     GlobalShortcut {
         name: "show-snippet-manager"
@@ -98,5 +101,10 @@ ShellRoot {
                 Qt.quit()
             }
         }
+    }
+    
+    Component.onCompleted: {
+        root.debugLog("📂 Loading snippets from JSON file...")
+        loadSnippets()
     }
 }

@@ -40,12 +40,12 @@ quickshell-snippet-manager/
 │   ├── TextInjection.qml       # (Replaced by inline Process)
 │   └── HyprlandService.qml     # (Simplified in shell.qml)
 ├── data/
-│   └── snippets.json           # ✅ Available for future file-based loading
+│   └── snippets.json           # ✅ Active JSON data source for snippets
 └── test_injection.sh           # ✅ Testing utility
 ```
 
 **Current Implementation Notes**:
-- Simplified architecture with embedded data for reliability
+- JSON-based data loading from data/snippets.json file
 - LazyLoader pattern for memory efficiency
 - Direct Process integration for text injection
 - Robust UI using Column + Repeater instead of ListView
@@ -78,16 +78,17 @@ User handles SUPER_L registration via Hyprland configuration.
 - wtype (text injection)
 - hyprctl (cursor positioning)
 
-### JSON Schema (Phase 1)
+### JSON Schema (Current)
 ```json
 [
   {
-    "id": "uuid-string",
     "title": "Snippet Title",
     "content": "The actual text content to inject"
   }
 ]
 ```
+
+**Note**: The JSON schema was simplified to remove the separate "id" field, using only "title" and "content" properties.
 
 ### Integration Points
 - Text injection happens after overlay dismissal
@@ -121,25 +122,27 @@ Based on official examples:
 
 ### Development Commands
 ```bash
-# Run snippet manager (normal mode)
-qs -p shell.qml
+# Run snippet manager (normal mode) - requires environment variable for JSON loading
+QML_XHR_ALLOW_FILE_READ=1 qs -p shell.qml
 
-# Run with verbose QuickShell logging
-qs -p shell.qml --verbose
+# Run with verbose QuickShell logging and JSON loading
+QML_XHR_ALLOW_FILE_READ=1 qs -p shell.qml --verbose
 
 # Run with debug mode (requires debugMode: true in shell.qml)
-qs -p shell.qml --verbose
+QML_XHR_ALLOW_FILE_READ=1 qs -p shell.qml --verbose
 
 # Test text injection directly
 wtype "Hello from snippet manager!"
 ```
 
-**IMPORTANT**: Always test changes by running `qs -p shell.qml` after making modifications to ensure the application loads correctly.
+**IMPORTANT**: Always test changes by running `QML_XHR_ALLOW_FILE_READ=1 qs -p shell.qml` after making modifications to ensure the application loads correctly and can access the JSON file.
 
 ### Debug Mode
 Toggle debug logging by changing `debugMode: true/false` in shell.qml:
 - **Normal mode**: Clean output, no debug messages
 - **Debug mode**: Comprehensive emoji-marked logging for keyboard navigation, focus management, and user interactions
+
+**IMPORTANT**: Always use `window.debugLog()` for debug messages instead of `console.log()`. This ensures conditional logging based on the debug mode setting and maintains consistent emoji-marked debug output throughout the application.
 
 ### Hyprland Integration
 ```bash
@@ -157,7 +160,8 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 
 ### Current Working Features
 - ✅ Overlay shows immediately on command execution
-- ✅ 5 embedded test snippets visible and selectable
+- ✅ JSON-based snippet loading from data/snippets.json (5 test snippets)
+- ✅ Simplified JSON schema (title + content only, no id field)
 - ✅ Keyboard navigation (↑/↓ arrows, Enter, Esc) with HyprlandFocusGrab
 - ✅ Mouse interaction (hover + click)
 - ✅ Text injection via wtype with proper error handling
