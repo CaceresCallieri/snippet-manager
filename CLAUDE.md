@@ -162,17 +162,30 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 - ✅ Overlay shows immediately on command execution
 - ✅ JSON-based snippet loading from data/snippets.json (8 test snippets)
 - ✅ Simplified JSON schema (title + content only, no id field)
-- ✅ **5-snippet display limit** with smart header showing "X of Y snippets"
-- ✅ Keyboard navigation (↑/↓ arrows, Enter, Esc) with proper bounds checking
+- ✅ **Sliding window navigation** - access ALL snippets while displaying only 5
+- ✅ **Smart header feedback** - shows current position "X of Y snippets"
+- ✅ Keyboard navigation (↑/↓ arrows, Enter, Esc) with smooth scrolling
 - ✅ Mouse interaction (hover + click)
 - ✅ Text injection via wtype with proper error handling
 - ✅ Auto-exit after selection or dismissal
 - ✅ Clean UI with subtitle design (no numbers, clean titles)
 - ✅ Debug mode with comprehensive logging system
 
-### Display Limit Implementation
-- **maxDisplayed property**: Configurable limit (currently 5)
-- **displayedSnippets computed property**: Uses `snippets.slice(0, Math.min(maxDisplayed, snippets.length))`
-- **Smart navigation bounds**: Navigation stops at index `displayedSnippets.length - 1`
-- **Enhanced header**: Shows "5 of 8 snippets" when more exist
-- **Foundation for sliding window**: Architecture supports future enhancement to navigate through all snippets
+### Sliding Window Navigation Implementation
+- **windowStart property**: Tracks the first snippet index in the visible window
+- **displayedSnippets computed property**: Uses `snippets.slice(windowStart, windowStart + maxDisplayed)`
+- **globalIndex property**: Computes absolute position as `windowStart + currentIndex`
+- **VS Code-style navigation**: Smooth scrolling that maintains visual continuity
+- **Within-window movement**: Arrow keys move cursor locally until boundary reached
+- **Boundary scrolling**: At edges, window slides by 1 position while cursor stays at boundary
+- **Full range access**: Navigate through all snippets (tested with 8 snippets)
+- **Robust edge handling**: Clear feedback at absolute top/bottom boundaries
+
+### Navigation Patterns (8 snippets, 5 displayed):
+```
+Initial:     Window [0,1,2,3,4] cursor at 0 → Global index 0
+Down 4x:     Window [0,1,2,3,4] cursor at 4 → Global index 4
+Down 1x:     Window [1,2,3,4,5] cursor at 4 → Global index 5 (scrolled!)
+Down 2x:     Window [3,4,5,6,7] cursor at 4 → Global index 7 (end)
+Up scroll:   Window [2,3,4,5,6] cursor at 0 → Global index 2 (reverse)
+```

@@ -9,7 +9,9 @@ PanelWindow {
     property int currentIndex: 0
     property bool debugMode: false
     property int maxDisplayed: 5
-    property var displayedSnippets: snippets.slice(0, Math.min(maxDisplayed, snippets.length))
+    property int windowStart: 0
+    property var displayedSnippets: snippets.slice(windowStart, windowStart + Math.min(maxDisplayed, snippets.length - windowStart))
+    property int globalIndex: windowStart + currentIndex
     
     signal snippetSelected(var snippet)
     signal dismissed()
@@ -54,7 +56,7 @@ PanelWindow {
             anchors.right: parent.right
             anchors.margins: 20
             height: 40
-            text: "Snippet Manager (" + Math.min(maxDisplayed, snippets.length) + " of " + snippets.length + " snippets)"
+            text: "Snippet Manager (" + (globalIndex + 1) + " of " + snippets.length + " snippets)"
             color: "#ffffff"
             font.pixelSize: 18
             font.bold: true
@@ -99,7 +101,7 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: {
-                            window.debugLog("🖱️ Clicked snippet at index: " + index)
+                            window.debugLog("🖱️ Clicked snippet at local index: " + index + " (global: " + (window.windowStart + index) + ")")
                             window.currentIndex = index
                             window.snippetSelected(modelData)
                         }
@@ -134,7 +136,7 @@ PanelWindow {
             onActiveFocusChanged: window.debugLog("🎯 keyHandler activeFocus changed: " + activeFocus)
             
             Keys.onPressed: function(event) {
-                window.debugLog("🔵 Key pressed: " + event.key + " Current index: " + window.currentIndex + " Displayed count: " + displayedSnippets.length + " Total count: " + snippets.length)
+                window.debugLog("🔵 Key pressed: " + event.key + " Global index: " + window.globalIndex + " Window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " Total: " + snippets.length)
                 switch (event.key) {
                 case Qt.Key_Escape:
                     window.debugLog("🔴 Escape pressed - dismissing overlay")
@@ -142,33 +144,43 @@ PanelWindow {
                     event.accepted = true
                     break
                 case Qt.Key_Up:
-                    window.debugLog("🔼 Up arrow pressed - current index: " + window.currentIndex)
+                    window.debugLog("🔼 Up arrow pressed - currentIndex: " + window.currentIndex + " windowStart: " + window.windowStart)
                     if (window.currentIndex > 0) {
+                        // Move cursor up within window
                         window.currentIndex--
-                        window.debugLog("✅ Moved up to index: " + window.currentIndex)
+                        window.debugLog("✅ Moved up to local index: " + window.currentIndex + " (global: " + window.globalIndex + ")")
+                    } else if (window.windowStart > 0) {
+                        // Scroll window up by 1, keep cursor at top
+                        window.windowStart--
+                        window.debugLog("🔄 Scrolled window up - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
                     } else {
-                        window.debugLog("⚠️ Already at top, cannot move up")
+                        window.debugLog("⚠️ Already at absolute top, cannot move up")
                     }
                     event.accepted = true
                     break
                 case Qt.Key_Down:
-                    window.debugLog("🔽 Down arrow pressed - current index: " + window.currentIndex)
+                    window.debugLog("🔽 Down arrow pressed - currentIndex: " + window.currentIndex + " windowStart: " + window.windowStart)
                     if (window.currentIndex < displayedSnippets.length - 1) {
+                        // Move cursor down within window
                         window.currentIndex++
-                        window.debugLog("✅ Moved down to index: " + window.currentIndex)
+                        window.debugLog("✅ Moved down to local index: " + window.currentIndex + " (global: " + window.globalIndex + ")")
+                    } else if (window.windowStart + window.maxDisplayed < snippets.length) {
+                        // Scroll window down by 1, keep cursor at bottom
+                        window.windowStart++
+                        window.debugLog("🔄 Scrolled window down - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
                     } else {
-                        window.debugLog("⚠️ Already at bottom, cannot move down")
+                        window.debugLog("⚠️ Already at absolute bottom, cannot move down")
                     }
                     event.accepted = true
                     break
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
-                    window.debugLog("🟢 Enter pressed - selecting snippet at index: " + window.currentIndex)
-                    if (window.currentIndex >= 0 && window.currentIndex < displayedSnippets.length) {
-                        window.debugLog("✅ Selecting snippet: " + displayedSnippets[window.currentIndex].title)
-                        window.snippetSelected(displayedSnippets[window.currentIndex])
+                    window.debugLog("🟢 Enter pressed - selecting snippet at global index: " + window.globalIndex)
+                    if (window.globalIndex >= 0 && window.globalIndex < snippets.length) {
+                        window.debugLog("✅ Selecting snippet: " + snippets[window.globalIndex].title)
+                        window.snippetSelected(snippets[window.globalIndex])
                     } else {
-                        window.debugLog("❌ Invalid index for selection")
+                        window.debugLog("❌ Invalid global index for selection")
                     }
                     event.accepted = true
                     break
