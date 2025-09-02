@@ -154,7 +154,10 @@ PanelWindow {
                         window.windowStart--
                         window.debugLog("🔄 Scrolled window up - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
                     } else {
-                        window.debugLog("⚠️ Already at absolute top, cannot move up")
+                        // Wrap around to last snippet
+                        window.windowStart = Math.max(0, snippets.length - window.maxDisplayed)
+                        window.currentIndex = Math.min(window.maxDisplayed - 1, snippets.length - 1 - window.windowStart)
+                        window.debugLog("🔄 Wrapped around to bottom - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
                     }
                     event.accepted = true
                     break
@@ -169,7 +172,10 @@ PanelWindow {
                         window.windowStart++
                         window.debugLog("🔄 Scrolled window down - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
                     } else {
-                        window.debugLog("⚠️ Already at absolute bottom, cannot move down")
+                        // Wrap around to first snippet
+                        window.windowStart = 0
+                        window.currentIndex = 0
+                        window.debugLog("🔄 Wrapped around to top - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
                     }
                     event.accepted = true
                     break

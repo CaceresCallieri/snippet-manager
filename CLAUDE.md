@@ -64,8 +64,8 @@ quickshell-snippet-manager/
 
 ### Keyboard Navigation
 - `Escape`: Hide overlay
-- `Up Arrow`: Move selection up  
-- `Down Arrow`: Move selection down
+- `Up Arrow`: Move selection up (wraps to bottom when at top)
+- `Down Arrow`: Move selection down (wraps to top when at bottom)
 - `Enter`: Select current snippet and inject text
 
 ### Global Shortcut
@@ -163,6 +163,7 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 - ✅ JSON-based snippet loading from data/snippets.json (8 test snippets)
 - ✅ Simplified JSON schema (title + content only, no id field)
 - ✅ **Sliding window navigation** - access ALL snippets while displaying only 5
+- ✅ **Wrap-around navigation** - infinite scrolling in both directions
 - ✅ **Smart header feedback** - shows current position "X of Y snippets"
 - ✅ Keyboard navigation (↑/↓ arrows, Enter, Esc) with smooth scrolling
 - ✅ Mouse interaction (hover + click)
@@ -187,5 +188,20 @@ Initial:     Window [0,1,2,3,4] cursor at 0 → Global index 0
 Down 4x:     Window [0,1,2,3,4] cursor at 4 → Global index 4
 Down 1x:     Window [1,2,3,4,5] cursor at 4 → Global index 5 (scrolled!)
 Down 2x:     Window [3,4,5,6,7] cursor at 4 → Global index 7 (end)
+Down 1x:     Window [0,1,2,3,4] cursor at 0 → Global index 0 (wrapped!)
 Up scroll:   Window [2,3,4,5,6] cursor at 0 → Global index 2 (reverse)
+```
+
+### Wrap-Around Navigation Implementation
+- **Infinite scrolling**: No dead ends - navigation continues infinitely in both directions
+- **Down wrap-around**: From last item (global index 7) → jumps to first item (global index 0)
+- **Up wrap-around**: From first item (global index 0) → jumps to last item (global index 7)  
+- **Smart positioning**: Wrap-around places window and cursor optimally for continued navigation
+- **Seamless UX**: Users can navigate through collections of any size without boundaries
+- **Visual continuity**: Window positioning ensures selected item is always clearly visible
+
+### Wrap-Around Logic:
+```javascript
+// Down arrow at absolute bottom: windowStart = 0, currentIndex = 0
+// Up arrow at absolute top: windowStart = max(0, total-maxDisplayed), currentIndex = min(4, total-1)
 ```
