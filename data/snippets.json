@@ -18,5 +18,17 @@
 	{
 		"title": "Git commit message template",
 		"content": "feat: add new feature\n\n- Implement core functionality\n- Add unit tests\n- Update documentation"
+	},
+	{
+		"title": "Snippet number 6",
+		"content": "This is the sixth snippet for testing purposes"
+	},
+	{
+		"title": "Snippet number 7",
+		"content": "This is the seventh snippet - should NOT be displayed"
+	},
+	{
+		"title": "Snippet number 8",
+		"content": "This is the eighth snippet - should NOT be displayed"
 	}
 ]

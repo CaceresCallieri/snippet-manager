@@ -8,6 +8,8 @@ PanelWindow {
     property var snippets: []
     property int currentIndex: 0
     property bool debugMode: false
+    property int maxDisplayed: 5
+    property var displayedSnippets: snippets.slice(0, Math.min(maxDisplayed, snippets.length))
     
     signal snippetSelected(var snippet)
     signal dismissed()
@@ -22,7 +24,7 @@ PanelWindow {
     margins.top: screen.height / 6
     exclusiveZone: 0
     
-    implicitWidth: 500
+    implicitWidth: 350
     implicitHeight: 320
     color: "transparent"
     
@@ -52,7 +54,7 @@ PanelWindow {
             anchors.right: parent.right
             anchors.margins: 20
             height: 40
-            text: "Snippet Manager (" + snippets.length + " snippets)"
+            text: "Snippet Manager (" + Math.min(maxDisplayed, snippets.length) + " of " + snippets.length + " snippets)"
             color: "#ffffff"
             font.pixelSize: 18
             font.bold: true
@@ -71,7 +73,7 @@ PanelWindow {
             spacing: 5
             
             Repeater {
-                model: snippets
+                model: displayedSnippets
                 
                 Rectangle {
                     width: snippetColumn.width
@@ -97,7 +99,7 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: {
-                            console.log("Clicked snippet", index)
+                            window.debugLog("🖱️ Clicked snippet at index: " + index)
                             window.currentIndex = index
                             window.snippetSelected(modelData)
                         }
@@ -132,7 +134,7 @@ PanelWindow {
             onActiveFocusChanged: window.debugLog("🎯 keyHandler activeFocus changed: " + activeFocus)
             
             Keys.onPressed: function(event) {
-                window.debugLog("🔵 Key pressed: " + event.key + " Current index: " + window.currentIndex + " Snippets count: " + snippets.length)
+                window.debugLog("🔵 Key pressed: " + event.key + " Current index: " + window.currentIndex + " Displayed count: " + displayedSnippets.length + " Total count: " + snippets.length)
                 switch (event.key) {
                 case Qt.Key_Escape:
                     window.debugLog("🔴 Escape pressed - dismissing overlay")
@@ -151,7 +153,7 @@ PanelWindow {
                     break
                 case Qt.Key_Down:
                     window.debugLog("🔽 Down arrow pressed - current index: " + window.currentIndex)
-                    if (window.currentIndex < snippets.length - 1) {
+                    if (window.currentIndex < displayedSnippets.length - 1) {
                         window.currentIndex++
                         window.debugLog("✅ Moved down to index: " + window.currentIndex)
                     } else {
@@ -162,9 +164,9 @@ PanelWindow {
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
                     window.debugLog("🟢 Enter pressed - selecting snippet at index: " + window.currentIndex)
-                    if (window.currentIndex >= 0 && window.currentIndex < snippets.length) {
-                        window.debugLog("✅ Selecting snippet: " + snippets[window.currentIndex].title)
-                        window.snippetSelected(snippets[window.currentIndex])
+                    if (window.currentIndex >= 0 && window.currentIndex < displayedSnippets.length) {
+                        window.debugLog("✅ Selecting snippet: " + displayedSnippets[window.currentIndex].title)
+                        window.snippetSelected(displayedSnippets[window.currentIndex])
                     } else {
                         window.debugLog("❌ Invalid index for selection")
                     }
