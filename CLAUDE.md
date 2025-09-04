@@ -255,3 +255,39 @@ wtype -s 5 "$text"
 - **Hyprland integration**: Works reliably with Hyprland keybind execution
 - **Process isolation**: Detached script avoids interference from QuickShell process lifecycle
 - **Error handling**: Simple script design minimizes failure points
+
+## Focus Management & Cursor Configuration
+
+### Current Solution: Hyprland Cursor Configuration
+The focus switching issue is resolved by configuring Hyprland cursor behavior:
+
+```bash
+# Add to hyprland.conf
+cursor {
+    no_warps = false
+}
+```
+
+This setting allows the cursor to warp, which maintains proper window focus when the snippet manager overlay appears and disappears.
+
+### Advanced Focus Preservation (Future Enhancement)
+For environments where `no_warps = true` is required or for more reliable focus management, implement pre-overlay window capture:
+
+**Problem**: QuickShell overlay interferes with `hyprctl activewindow` queries, returning overlay information instead of the original focused window.
+
+**Solution Strategy**:
+1. **Capture window BEFORE showing overlay**: Get active window address in shell.qml before LazyLoader becomes active
+2. **Alternative dispatchers**: Test Hyprland's focus dispatchers:
+   - `focuscurrentorlast` - Focus current or last focused window
+   - `focusurgentorlast` - Focus urgent or last focused window
+3. **Timing considerations**: Ensure window capture happens before overlay gains focus
+
+**Implementation Notes**:
+- Move `captureFocusedWindow()` call to occur before overlay becomes visible
+- Test if alternative dispatchers eliminate need for explicit address tracking
+- Consider using Hyprland's window history rather than manual address storage
+
+### Current Status
+- ✅ **Simple solution**: `no_warps = false` configuration resolves focus issues
+- 🔄 **Advanced solution**: Available for future implementation if needed
+- 📋 **Dispatcher testing**: `focuscurrentorlast` and `focusurgentorlast` remain untested but promising
