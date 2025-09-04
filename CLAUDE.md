@@ -293,5 +293,6 @@ For environments where `no_warps = true` is required or for more reliable focus 
 - 🔄 **Advanced solution**: Available for future implementation if needed
 - 📋 **Dispatcher testing**: `focuscurrentorlast` and `focusurgentorlast` remain untested but promising
 
-## JSON Loading Fix
-Fixed working directory dependency using `Qt.resolvedUrl("data/snippets.json")` instead of relative path. Required for Hyprland keybinds to work from any directory.
+## Path Resolution Fixes
+- **JSON loading**: Fixed using `Qt.resolvedUrl("data/snippets.json")` for reliable file access from any directory
+- **Script execution**: Fixed using `Qt.resolvedUrl("inject-text.sh")` for portable script path resolution

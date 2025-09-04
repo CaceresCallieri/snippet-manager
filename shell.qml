@@ -75,7 +75,8 @@ ShellRoot {
                 root.debugLog("🚀 Launching detached script with text argument...")
                 
                 // Use execDetached with command array (like DesktopAction.command)
-                var command = ["/home/jc/Dev/snippet-manager/inject-text.sh", snippet.content]
+                const scriptPath = Qt.resolvedUrl("inject-text.sh").toString().replace("file://", "")
+                var command = [scriptPath, snippet.content]
                 Quickshell.execDetached(command)
                 
                 // Exit immediately
