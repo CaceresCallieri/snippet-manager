@@ -42,7 +42,7 @@ ShellRoot {
                 }
             }
         }
-        xhr.open("GET", "data/snippets.json")
+        xhr.open("GET", Qt.resolvedUrl("data/snippets.json"))
         xhr.send()
     }
     

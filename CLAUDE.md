@@ -158,6 +158,7 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 - ✅ **Focus management**: Implemented proper focus chain with Qt.callLater for timing
 - ✅ **Debug system**: Working conditional logging with emoji markers for development
 - ✅ **Text injection**: Fixed with proper `Quickshell.execDetached()` syntax and detached script approach
+- ✅ **JSON loading reliability**: Fixed working directory dependency using Qt.resolvedUrl()
 
 ### Current Working Features
 - ✅ Overlay shows immediately on command execution
@@ -291,3 +292,6 @@ For environments where `no_warps = true` is required or for more reliable focus 
 - ✅ **Simple solution**: `no_warps = false` configuration resolves focus issues
 - 🔄 **Advanced solution**: Available for future implementation if needed
 - 📋 **Dispatcher testing**: `focuscurrentorlast` and `focusurgentorlast` remain untested but promising
+
+## JSON Loading Fix
+Fixed working directory dependency using `Qt.resolvedUrl("data/snippets.json")` instead of relative path. Required for Hyprland keybinds to work from any directory.
