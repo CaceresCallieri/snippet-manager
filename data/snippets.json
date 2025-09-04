@@ -12,8 +12,12 @@
 		"content": "Commit the progress made, rembember to omit the claude code references in the commit message"
 	},
 	{
-		"title": "Meeting notes template",
-		"content": "## Meeting Notes - [Date]\n\n### Attendees\n- \n\n### Agenda\n- \n\n### Action Items\n- \n\n### Next Steps\n- "
+		"title": "Next issue",
+		"content": "We will tackle the [issue] issue next, explore the code and make sure the fix is still relevant, if so, design the simplest, most robust plan of implementation"
+	},
+	{
+		"title": "Next issue with deep thinking",
+		"content": "We will tackle the - issue next, explore the code and make sure the fix is still relevant, if so, think deeply to design the simplest, most robust plan of implementation"
 	},
 	{
 		"title": "Git commit message template",
@@ -26,9 +30,5 @@
 	{
 		"title": "Snippet number 7",
 		"content": "This is the seventh snippet - should NOT be displayed"
-	},
-	{
-		"title": "Snippet number 8",
-		"content": "This is the eighth snippet - should NOT be displayed"
 	}
 ]

@@ -233,7 +233,7 @@ onSnippetSelected: function(snippet) {
 ```
 
 ### Detached Script Architecture
-**File**: `inject-text.sh`
+**File**: `inject-text.sh` (Hardened against command injection)
 ```bash
 #!/bin/bash
 # Detached text injection script for QuickShell snippet manager
@@ -241,19 +241,32 @@ onSnippetSelected: function(snippet) {
 
 text="$1"
 
+# Validate input length to prevent resource exhaustion attacks
+if [[ ${#text} -gt 10000 ]]; then
+    echo "Error: Text too long (max 10KB)" >&2
+    exit 1
+fi
+
 # Allow QuickShell to exit completely and focus to stabilize
 sleep 0.25
 
-# Use wtype with small delays for reliable text injection
+# Use printf with stdin for secure text injection (prevents argument parsing exploits)
 # -s flag adds milliseconds delay between key events to prevent issues
-wtype -s 5 "$text"
+printf '%s' "$text" | wtype -s 5 -
 ```
+
+### Security Hardening (P1 Critical Fix)
+1. **Input validation**: 10KB length limit prevents resource exhaustion attacks
+2. **Safe text handling**: `printf '%s' | wtype -` prevents argument parsing exploits
+3. **Command injection prevention**: Stdin approach eliminates shell command execution risks
+4. **Defense in depth**: Multiple layers protect against malicious snippet content
 
 ### Why This Approach Works
 1. **Detached execution**: Script runs independently after QuickShell exits
 2. **Proper timing**: 0.25s delay allows focus to stabilize
 3. **Reliable injection**: wtype with 5ms delays prevents key event issues
 4. **Clean architecture**: Separates UI from system interaction
+5. **Security first**: Hardened against command injection and DoS attacks
 
 ### Technical Notes
 - **execDetached documentation**: Found in QuickShell DesktopAction docs showing command array + working directory pattern
