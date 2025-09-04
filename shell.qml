@@ -56,36 +56,11 @@ ShellRoot {
         }
     }
     
-    function injectText(text) {
-        console.log("Injecting text:", text.substring(0, 50) + (text.length > 50 ? "..." : ""))
-        
-        // Simple Process execution
-        var process = Qt.createQmlObject('
-            import QtQuick;
-            import Quickshell.Io;
-            Process {
-                property string textToInject
-                command: ["wtype", textToInject]
-                
-                Component.onCompleted: {
-                    running = true
-                }
-                
-                onRunningChanged: {
-                    if (!running && hasExited) {
-                        if (exitCode === 0) {
-                            console.log("✅ Text injection successful")
-                        } else {
-                            console.error("❌ Text injection failed with code:", exitCode)
-                        }
-                        destroy()
-                    }
-                }
-            }
-        ', root)
-        
-        process.textToInject = text
-    }
+    // Detached script approach - no complex timers needed!
+    
+    // All injection logic moved to detached script - much simpler!
+    
+    // Window capture no longer needed for wtype approach
     
     // Use LazyLoader for memory efficiency when overlay isn't shown
     LazyLoader {
@@ -97,9 +72,14 @@ ShellRoot {
             
             onSnippetSelected: function(snippet) {
                 console.log("📋 Selected snippet:", snippet.title)
-                root.injectText(snippet.content)
-                // Exit after injection
-                Qt.callLater(function() { Qt.quit() })
+                root.debugLog("🚀 Launching detached script with text argument...")
+                
+                // Use execDetached with command array (like DesktopAction.command)
+                var command = ["/home/jc/Dev/snippet-manager/inject-text.sh", snippet.content]
+                Quickshell.execDetached(command)
+                
+                // Exit immediately
+                Qt.quit()
             }
             
             onDismissed: {
@@ -108,6 +88,8 @@ ShellRoot {
             }
         }
     }
+    
+    // Focus management no longer needed with detached approach!
     
     Component.onCompleted: {
         root.debugLog("📂 Loading snippets from JSON file...")

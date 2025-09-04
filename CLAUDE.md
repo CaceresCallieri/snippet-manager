@@ -157,6 +157,7 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 - ✅ **Keyboard navigation**: Fixed with HyprlandFocusGrab for reliable input capture
 - ✅ **Focus management**: Implemented proper focus chain with Qt.callLater for timing
 - ✅ **Debug system**: Working conditional logging with emoji markers for development
+- ✅ **Text injection**: Fixed with proper `Quickshell.execDetached()` syntax and detached script approach
 
 ### Current Working Features
 - ✅ Overlay shows immediately on command execution
@@ -167,7 +168,7 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 - ✅ **Smart header feedback** - shows current position "X of Y snippets"
 - ✅ Keyboard navigation (↑/↓ arrows, Enter, Esc) with smooth scrolling
 - ✅ Mouse interaction (hover + click)
-- ✅ Text injection via wtype with proper error handling
+- ✅ **Text injection via wtype** - working with detached script approach and proper `execDetached()` syntax
 - ✅ Auto-exit after selection or dismissal
 - ✅ Clean UI with subtitle design (no numbers, clean titles)
 - ✅ Debug mode with comprehensive logging system
@@ -205,3 +206,52 @@ Up scroll:   Window [2,3,4,5,6] cursor at 0 → Global index 2 (reverse)
 // Down arrow at absolute bottom: windowStart = 0, currentIndex = 0
 // Up arrow at absolute top: windowStart = max(0, total-maxDisplayed), currentIndex = min(4, total-1)
 ```
+
+## Text Injection Implementation
+
+### Critical Breakthrough: execDetached Syntax
+The key to making text injection work was discovering the correct syntax for `Quickshell.execDetached()`. After extensive debugging, it was found that the function requires both a command array and working directory parameter, similar to `DesktopAction.command`.
+
+**Working Implementation:**
+```javascript
+onSnippetSelected: function(snippet) {
+    console.log("📋 Selected snippet:", snippet.title)
+    root.debugLog("🚀 Launching detached script with text argument...")
+    
+    // CRITICAL: Use command array + working directory (like DesktopAction.command)
+    var command = ["/home/jc/Dev/snippet-manager/inject-text.sh", snippet.content]
+    Quickshell.execDetached(command, "/home/jc/Dev/snippet-manager")
+    
+    // Exit immediately
+    Qt.quit()
+}
+```
+
+### Detached Script Architecture
+**File**: `inject-text.sh`
+```bash
+#!/bin/bash
+# Detached text injection script for QuickShell snippet manager
+# This script runs independently after QuickShell exits to avoid interference
+
+text="$1"
+
+# Allow QuickShell to exit completely and focus to stabilize
+sleep 0.25
+
+# Use wtype with small delays for reliable text injection
+# -s flag adds milliseconds delay between key events to prevent issues
+wtype -s 5 "$text"
+```
+
+### Why This Approach Works
+1. **Detached execution**: Script runs independently after QuickShell exits
+2. **Proper timing**: 0.25s delay allows focus to stabilize
+3. **Reliable injection**: wtype with 5ms delays prevents key event issues
+4. **Clean architecture**: Separates UI from system interaction
+
+### Technical Notes
+- **execDetached documentation**: Found in QuickShell DesktopAction docs showing command array + working directory pattern
+- **Hyprland integration**: Works reliably with Hyprland keybind execution
+- **Process isolation**: Detached script avoids interference from QuickShell process lifecycle
+- **Error handling**: Simple script design minimizes failure points
