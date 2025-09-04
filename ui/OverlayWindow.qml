@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import "../utils"
 
 PanelWindow {
     id: window
@@ -8,7 +9,7 @@ PanelWindow {
     property var snippets: []
     property int currentIndex: 0
     property bool debugMode: false
-    property int maxDisplayed: 5
+    property int maxDisplayed: Constants.maxVisibleSnippets
     property int windowStart: 0
     
     // Performance measurement (external counters to avoid binding loops)
@@ -49,11 +50,11 @@ PanelWindow {
     
     
     anchors.top: true
-    margins.top: screen.height / 6
+    margins.top: screen.height * Constants.overlayTopOffsetFraction
     exclusiveZone: 0
     
-    implicitWidth: 350
-    implicitHeight: 320
+    implicitWidth: Constants.overlayWidth
+    implicitHeight: Constants.overlayHeight
     color: "transparent"
     
     HyprlandFocusGrab {
@@ -72,19 +73,19 @@ PanelWindow {
         anchors.fill: parent
         color: "#1a1a1a"
         border.color: "#666666"
-        border.width: 1
-        radius: 8
+        border.width: Constants.borderWidth
+        radius: Constants.borderRadius
         
         Text {
             id: header
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: 20
-            height: 40
+            anchors.margins: Constants.headerMargins
+            height: Constants.headerHeight
             text: "Snippet Manager (" + (globalIndex + 1) + " of " + snippets.length + " snippets)"
             color: "#ffffff"
-            font.pixelSize: 18
+            font.pixelSize: Constants.headerFontSize
             font.bold: true
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
@@ -96,29 +97,29 @@ PanelWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: instructions.top
-            anchors.margins: 15
-            anchors.topMargin: 10
-            spacing: 5
+            anchors.margins: Constants.mainMargins
+            anchors.topMargin: Constants.headerTopMargin
+            spacing: Constants.itemSpacing
             
             Repeater {
                 model: displayedSnippets
                 
                 Rectangle {
                     width: snippetColumn.width
-                    height: 35
+                    height: Constants.snippetItemHeight
                     color: index === window.currentIndex ? "#444444" : "#2a2a2a"
                     border.color: index === window.currentIndex ? "#ffffff" : "#555555"
-                    border.width: 1
-                    radius: 6
+                    border.width: Constants.borderWidth
+                    radius: Constants.itemBorderRadius
                     
                     Text {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.margins: 15
+                        anchors.margins: Constants.textMargins
                         text: modelData.title || "Untitled"
                         color: index === window.currentIndex ? "#ffffff" : "#cccccc"
-                        font.pixelSize: 14
+                        font.pixelSize: Constants.snippetFontSize
                         font.bold: false
                         elide: Text.ElideRight
                     }
@@ -144,11 +145,11 @@ PanelWindow {
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: 15
-            height: 25
+            anchors.margins: Constants.mainMargins
+            height: Constants.instructionsHeight
             text: "↑↓ Navigate • Enter Select • Esc Cancel"
             color: "#aaaaaa"
-            font.pixelSize: 12
+            font.pixelSize: Constants.instructionsFontSize
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }
