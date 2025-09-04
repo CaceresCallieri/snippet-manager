@@ -4,12 +4,12 @@
 		"content": "Omit Claude Code references in the commit message"
 	},
 	{
-		"title": "Hello greeting",
-		"content": "Hello! How are you doing today?"
+		"title": "Update CLAUDE.md file",
+		"content": "Update the CLAUDE.md file only with relevant information that could be useful for future developmet, try to keep it brief, avoid date logging."
 	},
 	{
-		"title": "Email signature",
-		"content": "Best regards,\nJohn Doe\nSoftware Developer\njohn.doe@email.com"
+		"title": "Commit progress",
+		"content": "Commit the progress made, rembember to omit the claude code references in the commit message"
 	},
 	{
 		"title": "Meeting notes template",

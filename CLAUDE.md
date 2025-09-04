@@ -35,12 +35,15 @@ quickshell-snippet-manager/
 ├── shell.qml                   # ✅ Main application (ShellRoot + LazyLoader)
 ├── ui/
 │   └── OverlayWindow.qml       # ✅ Simplified overlay with conditional debug logging
+├── utils/
+│   └── Constants.qml           # ✅ Centralized configuration singleton
 ├── services/                   # (Legacy - not currently used)
 │   ├── DataLoader.qml          # (Replaced by embedded data)
 │   ├── TextInjection.qml       # (Replaced by inline Process)
 │   └── HyprlandService.qml     # (Simplified in shell.qml)
 ├── data/
 │   └── snippets.json           # ✅ Active JSON data source for snippets
+├── inject-text.sh              # ✅ Detached text injection script
 └── test_injection.sh           # ✅ Testing utility
 ```
 
@@ -48,7 +51,8 @@ quickshell-snippet-manager/
 - JSON-based data loading from data/snippets.json file
 - LazyLoader pattern for memory efficiency
 - Direct Process integration for text injection
-- Robust UI using Column + Repeater instead of ListView
+- Robust UI using Column + Repeater (SnippetList.qml was removed as unused)
+- Centralized configuration via Constants.qml singleton
 - Auto-quit functionality for launcher-style behavior
 - HyprlandFocusGrab for reliable keyboard input capture
 - Conditional debug logging system with emoji markers
