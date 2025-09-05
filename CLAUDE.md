@@ -363,11 +363,34 @@ Comprehensive validation in `shell.qml` prevents crashes and security issues fro
 4. **Clean architecture**: Separates UI from system interaction
 5. **Security first**: Hardened against command injection and DoS attacks
 
+### Timeout Protection (P4 Enhancement)
+**Script-level timeout handling** prevents hanging wtype processes:
+
+```bash
+# 5-second timeout with fallback for systems without timeout command
+timeout_seconds=5
+if command -v timeout >/dev/null 2>&1; then
+    timeout ${timeout_seconds} wtype -s 5 - < <(printf '%s' "$text")
+    exit_code=$?
+    
+    if [ $exit_code -eq 124 ]; then
+        # Timeout occurred - notify user via desktop notification
+        notify-send -u critical "Snippet Manager" "Text injection timed out"
+        exit 1
+    fi
+else
+    # Graceful fallback when timeout unavailable
+    printf '%s' "$text" | wtype -s 5 -
+fi
+```
+
+**Benefits**: Prevents infinite hangs, provides user feedback, maintains system stability with bounded execution time.
+
 ### Technical Notes
 - **execDetached documentation**: Found in QuickShell DesktopAction docs showing command array + working directory pattern
 - **Hyprland integration**: Works reliably with Hyprland keybind execution
 - **Process isolation**: Detached script avoids interference from QuickShell process lifecycle
-- **Error handling**: Simple script design minimizes failure points
+- **Timeout protection**: 5-second bound prevents hanging processes with desktop notifications for failures
 
 ## Focus Management & Cursor Configuration
 
