@@ -15,6 +15,21 @@ fi
 # Delay value: Constants.injectionDelayMs (250ms)
 sleep 0.25
 
+# Enhanced cursor positioning support
+# Check for [cursor] marker and calculate positioning
+cursor_offset=0
+clean_text="$text"
+
+if [[ "$text" == *"[cursor]"* ]]; then
+    # Split text at cursor marker
+    prefix="${text%%\[cursor\]*}"     # Text before marker
+    suffix="${text##*\[cursor\]}"     # Text after marker
+    cursor_offset=${#suffix}          # Characters to move back
+    clean_text="${prefix}${suffix}"   # Text without marker
+    
+    echo "Cursor positioning enabled: offset ${cursor_offset} characters" >&2
+fi
+
 # Use printf with stdin for secure text injection (prevents argument parsing exploits)
 # -s flag adds milliseconds delay between key events to prevent issues
 # Keystroke delay: Constants.wtypeKeystrokeDelayMs (5ms)
@@ -24,7 +39,7 @@ timeout_seconds=5
 
 if command -v timeout >/dev/null 2>&1; then
     # Use timeout command to bound wtype execution
-    timeout ${timeout_seconds} wtype -s 5 - < <(printf '%s' "$text")
+    timeout ${timeout_seconds} wtype -s 5 - < <(printf '%s' "$clean_text")
     exit_code=$?
     
     if [ $exit_code -eq 124 ]; then
@@ -46,8 +61,31 @@ if command -v timeout >/dev/null 2>&1; then
         
         exit $exit_code
     fi
+    
+    # Position cursor if marker was found
+    if [ $cursor_offset -gt 0 ]; then
+        echo "Positioning cursor: moving ${cursor_offset} characters left" >&2
+        for ((i=0; i<cursor_offset; i++)); do
+            timeout 1 wtype -k Left >/dev/null 2>&1 || {
+                echo "Warning: Cursor positioning failed at position $i" >&2
+                break
+            }
+        done
+    fi
+    
 else
     # Fallback for systems without timeout command
     echo "Warning: timeout command not available - no timeout protection" >&2
-    printf '%s' "$text" | wtype -s 5 -
+    printf '%s' "$clean_text" | wtype -s 5 -
+    
+    # Position cursor (without timeout protection)
+    if [ $cursor_offset -gt 0 ]; then
+        echo "Positioning cursor: moving ${cursor_offset} characters left" >&2
+        for ((i=0; i<cursor_offset; i++)); do
+            wtype -k Left >/dev/null 2>&1 || {
+                echo "Warning: Cursor positioning failed at position $i" >&2
+                break
+            }
+        done
+    fi
 fi

@@ -26,6 +26,7 @@ A modular snippet manager for Arch Linux Hyprland systems built with QuickShell.
 - ✅ Mouse navigation (hover to select, click to choose)
 - ✅ Embedded static snippet data (5 test snippets)
 - ✅ Text injection via wtype with proper error handling
+- ✅ Cursor positioning within injected text using `[cursor]` markers
 - ✅ Auto-exit after selection or dismissal (Escape key)
 - ✅ High-visibility UI with orange borders and clear numbering
 
@@ -44,7 +45,7 @@ quickshell-snippet-manager/
 │   └── HyprlandService.qml     # (Simplified in shell.qml)
 ├── data/
 │   └── snippets.json           # ✅ Active JSON data source for snippets
-├── inject-text.sh              # ✅ Detached text injection script
+├── inject-text.sh              # ✅ Detached text injection script with cursor positioning
 └── test_injection.sh           # ✅ Testing utility
 ```
 
@@ -458,6 +459,60 @@ fi
 ```
 
 **Benefits**: Prevents infinite hangs, provides user feedback, maintains system stability with bounded execution time.
+
+### Cursor Positioning Enhancement
+**Feature**: Enhanced text injection with intelligent cursor positioning using `[cursor]` markers.
+
+**Implementation**: The inject-text.sh script now supports cursor positioning within injected text:
+
+```bash
+# Enhanced cursor positioning support
+if [[ "$text" == *"[cursor]"* ]]; then
+    # Split text at cursor marker
+    prefix="${text%%\[cursor\]*}"     # Text before marker
+    suffix="${text##*\[cursor\]}"     # Text after marker
+    cursor_offset=${#suffix}          # Characters to move back
+    clean_text="${prefix}${suffix}"   # Text without marker
+    
+    # Inject text then position cursor
+    printf '%s' "$clean_text" | wtype -s 5 -
+    
+    # Position cursor using Left arrow keys
+    for ((i=0; i<cursor_offset; i++)); do
+        wtype -k Left >/dev/null 2>&1 || break
+    done
+fi
+```
+
+**Usage Examples**:
+```json
+{
+    "title": "Function Template",
+    "content": "function myFunction() {\n    [cursor]\n    return true;\n}"
+},
+{
+    "title": "If Statement Template", 
+    "content": "if ([cursor]) {\n    // TODO: implement logic\n}"
+},
+{
+    "title": "Email Template",
+    "content": "Hi [cursor],\n\nBest regards,\nYour Name"
+}
+```
+
+**Technical Benefits**:
+- **Robust**: Full text injection first, then positioning (content never lost)
+- **Simple**: Single `[cursor]` marker syntax, uses existing wtype tool
+- **Backward Compatible**: Existing snippets without markers work unchanged
+- **Error Handling**: Graceful fallback if positioning fails, with detailed logging
+- **Performance**: Bounded cursor movement with timeout protection
+
+**Positioning Algorithm**:
+1. **Detection**: Check for `[cursor]` marker in snippet content
+2. **Parsing**: Split text into prefix (before marker) and suffix (after marker)
+3. **Injection**: Insert clean text (prefix + suffix) via wtype
+4. **Positioning**: Move cursor left by suffix length using `wtype -k Left`
+5. **Validation**: Break loop on positioning failure to prevent hangs
 
 ### Technical Notes
 - **execDetached documentation**: Found in QuickShell DesktopAction docs showing command array + working directory pattern
