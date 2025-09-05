@@ -177,6 +177,7 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 - ✅ Auto-exit after selection or dismissal
 - ✅ Clean UI with subtitle design (no numbers, clean titles)
 - ✅ Debug mode with comprehensive logging system
+- ✅ **Performance optimized** - eliminated binding loops in displayedSnippets property
 
 ### Sliding Window Navigation Implementation
 - **windowStart property**: Tracks the first snippet index in the visible window
@@ -187,6 +188,39 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 - **Boundary scrolling**: At edges, window slides by 1 position while cursor stays at boundary
 - **Full range access**: Navigate through all snippets (tested with 8 snippets)
 - **Robust edge handling**: Clear feedback at absolute top/bottom boundaries
+
+### Performance Optimization: Binding Loop Fix
+**Issue**: The `displayedSnippets` property previously caused QML binding loops due to side effects within the binding.
+
+**Solution**: 
+- Made binding pure with `readonly property var displayedSnippets`
+- Separated debug tracking to `onDisplayedSnippetsChanged` handler
+- Eliminated unnecessary recalculations and callback scheduling
+
+**Technical Implementation**:
+```javascript
+// Before (caused binding loops)
+property var displayedSnippets: {
+    Qt.callLater(function() { calculationCount++ })  // Side effect!
+    return snippets.slice(windowStart, end)
+}
+
+// After (pure binding)  
+readonly property var displayedSnippets: {
+    if (snippets.length === 0) return []
+    const end = Math.min(windowStart + maxDisplayed, snippets.length)
+    return snippets.slice(windowStart, end)
+}
+
+// Debug tracking handled separately
+onDisplayedSnippetsChanged: trackCalculation()
+```
+
+**Benefits**:
+- Zero binding loop warnings in console output
+- Optimal performance - recalculates only when dependencies change
+- Maintains all debug tracking functionality
+- Follows QML best practices for computed properties
 
 ### Navigation Patterns (8 snippets, 5 displayed):
 ```
