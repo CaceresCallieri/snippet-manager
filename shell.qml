@@ -11,12 +11,35 @@ ShellRoot {
     property bool isDebugLoggingEnabled: true
     property var loadedValidSnippets: []
     
+    /**
+     * Conditionally logs debug messages with emoji markers
+     * Only outputs when debug mode is enabled to keep production output clean.
+     * 
+     * @param {string} message - Debug message to log (should include emoji marker for consistency)
+     * 
+     * Side effects:
+     * - Logs message to console only if isDebugLoggingEnabled is true
+     * - No output in production mode
+     */
     function debugLog(message) {
         if (isDebugLoggingEnabled) {
             console.log(message)
         }
     }
     
+    /**
+     * Sends desktop notifications to user via notify-send command
+     * Used for critical errors, warnings, and status updates that user needs to see.
+     * 
+     * @param {string} title - Notification title (appears in notification header)
+     * @param {string} message - Notification message body
+     * @param {string} urgency - Urgency level: "low", "normal", or "critical" (default: "normal")
+     * 
+     * Side effects:
+     * - Executes notify-send command via Quickshell.execDetached
+     * - Logs error to console if notification sending fails
+     * - No-op if notify-send command is not available on system
+     */
     function notifyUser(title, message, urgency = "normal") {
         try {
             const command = ["notify-send", "-u", urgency, title, message]
@@ -26,6 +49,21 @@ ShellRoot {
         }
     }
     
+    /**
+     * Fast validation for snippet data before text injection
+     * Used as final safety check before processing user-selected snippets.
+     * 
+     * @param {Object} snippet - Snippet object to validate
+     * @returns {boolean} True if snippet has valid structure and properties
+     * 
+     * Validation checks:
+     * - Object existence and type
+     * - Required properties (title, content) exist and are strings
+     * 
+     * Side effects:
+     * - Logs detailed error messages for each validation failure
+     * - Does NOT check content length limits (handled by validateSnippet)
+     */
     function validateSnippetData(snippet) {
         if (!snippet) {
             console.error("❌ Snippet data is null or undefined")
@@ -50,6 +88,25 @@ ShellRoot {
         return true
     }
     
+    /**
+     * Comprehensive multi-level validation for snippet objects during data loading
+     * Ensures only safe, well-formed snippets are displayed in the UI.
+     * Consistent with security boundaries enforced by inject-text.sh.
+     * 
+     * @param {Object} snippet - Snippet object from JSON file to validate
+     * @param {number} index - Array index for detailed error reporting
+     * @returns {boolean} True if snippet passes all validation levels
+     * 
+     * Validation levels:
+     * 1. Object structure - existence and type checking
+     * 2. Required fields - title and content properties must exist
+     * 3. Type validation - both properties must be strings
+     * 4. Content limits - title ≤ 200 chars, content ≤ 10KB
+     * 
+     * Side effects:
+     * - Logs warning messages for each validation failure with specific details
+     * - Uses index parameter to identify problematic snippets in console output
+     */
     function validateSnippet(snippet, index) {
         // Level 1: Object structure validation
         if (!snippet || typeof snippet !== 'object') {
@@ -93,6 +150,32 @@ ShellRoot {
         return true
     }
     
+    /**
+     * Loads snippet data from JSON file with comprehensive error handling
+     * Performs XMLHttpRequest to load data/snippets.json, validates all entries,
+     * and gracefully handles various failure scenarios.
+     * 
+     * Expected JSON format: Array of objects with {title: string, content: string}
+     * 
+     * Data flow:
+     * 1. XMLHttpRequest loads data/snippets.json via Qt.resolvedUrl
+     * 2. JSON.parse converts response to JavaScript objects
+     * 3. Array validation ensures top-level structure is correct
+     * 4. validateSnippet filters out invalid entries
+     * 5. Sets loadedValidSnippets to filtered results (empty array if none valid)
+     * 
+     * Side effects:
+     * - Sets root.loadedValidSnippets to filtered snippet array
+     * - Logs comprehensive status information and error details
+     * - Provides graceful degradation (empty array) for all failure modes
+     * - Triggers UI empty state display when no valid snippets found
+     * 
+     * Error handling:
+     * - File not found: logs error, sets empty array
+     * - Parse errors: logs JSON syntax issues, sets empty array  
+     * - Type errors: logs expected vs actual structure, sets empty array
+     * - Validation failures: filters out invalid snippets, logs counts
+     */
     function loadSnippets() {
         var xhr = new XMLHttpRequest()
         xhr.onreadystatechange = function() {

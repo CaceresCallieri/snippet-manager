@@ -142,6 +142,54 @@ The navigation system uses extracted helper functions for maintainability:
 
 **Benefits**: Navigation logic reduced from 85+ lines of nested conditionals to 20 lines of readable function calls. Each navigation behavior is isolated, testable, and reusable between Up/Down cases.
 
+### JSDoc Documentation Standards
+Comprehensive JSDoc comments added to 20+ functions across the codebase for maintainability:
+
+**Documentation Coverage**:
+- **Navigation functions**: All helper functions with parameter types, side effects, and examples
+- **Data management**: Validation and loading functions with security boundaries documented
+- **Performance tracking**: Binding optimization and performance monitoring functions
+- **Computed properties**: Complex calculations like `visibleSnippetWindow` and `globalIndex`
+
+**Documentation Pattern**:
+```javascript
+/**
+ * Brief function description with purpose
+ * Extended explanation for complex behavior, edge cases, examples
+ * 
+ * @param {type} paramName - Parameter description with constraints
+ * @returns {type} Return value description
+ * 
+ * Side effects:
+ * - State changes, logging, notifications documented
+ * - Performance implications noted
+ */
+function exampleFunction(param) {
+    // Implementation
+}
+```
+
+**Benefits**: Self-documenting code reduces cognitive load, improves debugging, and enables faster onboarding for future development.
+
+## Code Quality Documentation
+
+### Function Documentation Guidelines
+All complex functions use JSDoc format with:
+- **Purpose and behavior**: Clear description of what the function does
+- **Parameter documentation**: Types, constraints, and expected values
+- **Return value specification**: Type and meaning of returned data
+- **Side effects**: State changes, logging, notifications, performance implications
+- **Examples**: For complex mathematical calculations and edge cases
+- **Security notes**: Validation boundaries and safety measures
+
+**Priority Areas Documented**:
+1. Navigation logic (condition predicates, actions, wrap-around calculations)
+2. Data validation and loading (multi-level validation, error handling)
+3. Performance monitoring (binding optimization, calculation tracking)
+4. UI state management (computed properties, debug logging)
+
+**IMPORTANT**: All new functions must include JSDoc documentation following the established pattern above. This ensures consistent code quality and maintainability.
+
 ## Development Resources
 
 ### QuickShell Documentation
@@ -180,6 +228,8 @@ Toggle debug logging by changing `debugMode: true/false` in shell.qml:
 - **Debug mode**: Comprehensive emoji-marked logging for keyboard navigation, focus management, and user interactions
 
 **IMPORTANT**: Always use `window.debugLog()` for debug messages instead of `console.log()`. This ensures conditional logging based on the debug mode setting and maintains consistent emoji-marked debug output throughout the application.
+
+**IMPORTANT**: Always add JSDoc comments to all new functions following the established documentation pattern. This maintains code quality and helps future development.
 
 ### Hyprland Integration
 ```bash
