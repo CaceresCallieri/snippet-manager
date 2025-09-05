@@ -34,7 +34,8 @@ A modular snippet manager for Arch Linux Hyprland systems built with QuickShell.
 quickshell-snippet-manager/
 ├── shell.qml                   # ✅ Main application (ShellRoot + LazyLoader)
 ├── ui/
-│   └── OverlayWindow.qml       # ✅ Simplified overlay with conditional debug logging
+│   ├── OverlayWindow.qml       # ✅ Simplified UI presentation layer (350 lines)
+│   └── NavigationController.qml # ✅ Extracted navigation logic component (300 lines)
 ├── utils/
 │   └── Constants.qml           # ✅ Centralized configuration singleton
 ├── services/                   # (Legacy - not currently used)
@@ -131,16 +132,27 @@ The codebase follows consistent, self-documenting naming patterns:
 
 These names immediately communicate purpose and reduce cognitive load for maintenance and development.
 
-### Navigation Logic Architecture
-The navigation system uses extracted helper functions for maintainability:
+### Navigation Controller Architecture
+Navigation logic extracted into dedicated `ui/NavigationController.qml` component for clean separation of concerns:
 
-**Helper Function Pattern**:
-- **Condition predicates**: `canMoveUpWithinWindow()`, `canScrollWindowUp()`, etc. - Return boolean for navigation state
-- **Action functions**: `moveUpWithinWindow()`, `scrollWindowUp()`, etc. - Perform state mutations with debug logging
-- **Calculation functions**: `calculateBottomWrapPosition()`, `calculateTopWrapPosition()` - Handle complex wrap-around math
-- **State management**: `updateNavigationState(direction)` - Centralized debug logging and state tracking
+**Extracted Navigation Controller**:
+- **Standalone component**: 300-line dedicated navigation controller with complete sliding window logic
+- **16 helper functions**: Condition predicates, action functions, wrap-around calculations, and state management
+- **Signal-based communication**: `selectionChanged()` signal for UI synchronization
+- **Property bindings**: `globalIndex`, `visibleSnippetWindow`, `currentIndex` properties for UI data binding
+- **Complete isolation**: Navigation algorithms completely separated from UI presentation
 
-**Benefits**: Navigation logic reduced from 85+ lines of nested conditionals to 20 lines of readable function calls. Each navigation behavior is isolated, testable, and reusable between Up/Down cases.
+**OverlayWindow Refactoring**:
+- **Simplified from 570 → 350 lines**: Removed 135 lines of navigation logic 
+- **Pure UI presentation**: Focus on rendering, event handling, and user interaction
+- **Controller integration**: Uses NavigationController instance for all navigation operations
+- **Clean separation**: UI component binds to controller properties, calls controller methods
+
+**Benefits**: 
+- **Testability**: Navigation logic can be unit tested independently of UI
+- **Maintainability**: Two focused components instead of monolithic file
+- **Reusability**: NavigationController available for other UI components
+- **Code clarity**: Clear interfaces between navigation algorithms and presentation layer
 
 ### JSDoc Documentation Standards
 Comprehensive JSDoc comments added to 20+ functions across the codebase for maintainability:
