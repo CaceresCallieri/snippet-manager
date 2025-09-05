@@ -11,6 +11,7 @@ PanelWindow {
     property bool debugMode: false
     property int maxDisplayed: Constants.maxVisibleSnippets
     property int windowStart: 0
+    property bool hasValidSnippets: snippets.length > 0
     
     // Performance measurement (external counters to avoid binding loops)
     property int calculationCount: 0
@@ -93,7 +94,9 @@ PanelWindow {
             anchors.right: parent.right
             anchors.margins: Constants.headerMargins
             height: Constants.headerHeight
-            text: "Snippet Manager (" + (globalIndex + 1) + " of " + snippets.length + " snippets)"
+            text: window.hasValidSnippets ? 
+                  "Snippet Manager (" + (globalIndex + 1) + " of " + snippets.length + " snippets)" :
+                  "Snippet Manager"
             color: "#ffffff"
             font.pixelSize: Constants.headerFontSize
             font.bold: true
@@ -101,49 +104,63 @@ PanelWindow {
             verticalAlignment: Text.AlignVCenter
         }
         
-        Column {
-            id: snippetColumn
+        // Main content area with conditional rendering
+        Item {
+            id: contentArea
             anchors.top: header.bottom
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: instructions.top
             anchors.margins: Constants.mainMargins
             anchors.topMargin: Constants.headerTopMargin
-            spacing: Constants.itemSpacing
             
-            Repeater {
-                model: displayedSnippets
+            // Empty state UI
+            EmptyStateView {
+                anchors.fill: parent
+                visible: !window.hasValidSnippets
+            }
+            
+            // Normal snippet list
+            Column {
+                id: snippetColumn
+                anchors.fill: parent
+                visible: window.hasValidSnippets
+                spacing: Constants.itemSpacing
                 
-                Rectangle {
-                    width: snippetColumn.width
-                    height: Constants.snippetItemHeight
-                    color: index === window.currentIndex ? "#444444" : "#2a2a2a"
-                    border.color: index === window.currentIndex ? "#ffffff" : "#555555"
-                    border.width: Constants.borderWidth
-                    radius: Constants.itemBorderRadius
+                Repeater {
+                    model: displayedSnippets
                     
-                    Text {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.margins: Constants.textMargins
-                        text: modelData.title || "Untitled"
-                        color: index === window.currentIndex ? "#ffffff" : "#cccccc"
-                        font.pixelSize: Constants.snippetFontSize
-                        font.bold: false
-                        elide: Text.ElideRight
-                    }
-                    
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: {
-                            window.debugLog("🖱️ Clicked snippet at local index: " + index + " (global: " + (window.windowStart + index) + ")")
-                            window.currentIndex = index
-                            window.snippetSelected(modelData)
+                    Rectangle {
+                        width: snippetColumn.width
+                        height: Constants.snippetItemHeight
+                        color: index === window.currentIndex ? "#444444" : "#2a2a2a"
+                        border.color: index === window.currentIndex ? "#ffffff" : "#555555"
+                        border.width: Constants.borderWidth
+                        radius: Constants.itemBorderRadius
+                        
+                        Text {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.margins: Constants.textMargins
+                            text: modelData.title || "Untitled"
+                            color: index === window.currentIndex ? "#ffffff" : "#cccccc"
+                            font.pixelSize: Constants.snippetFontSize
+                            font.bold: false
+                            elide: Text.ElideRight
                         }
-                        onEntered: {
-                            window.currentIndex = index
+                        
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: {
+                                window.debugLog("🖱️ Clicked snippet at local index: " + index + " (global: " + (window.windowStart + index) + ")")
+                                window.currentIndex = index
+                                window.snippetSelected(modelData)
+                            }
+                            onEntered: {
+                                window.currentIndex = index
+                            }
                         }
                     }
                 }
@@ -157,7 +174,9 @@ PanelWindow {
             anchors.right: parent.right
             anchors.margins: Constants.mainMargins
             height: Constants.instructionsHeight
-            text: "↑↓ Navigate • Enter Select • Esc Cancel"
+            text: window.hasValidSnippets ? 
+                  "↑↓ Navigate • Enter Select • Esc Cancel" : 
+                  "Esc Cancel • Add snippets to data/snippets.json"
             color: "#aaaaaa"
             font.pixelSize: Constants.instructionsFontSize
             horizontalAlignment: Text.AlignHCenter
@@ -173,14 +192,25 @@ PanelWindow {
             onActiveFocusChanged: window.debugLog("🎯 keyHandler activeFocus changed: " + activeFocus)
             
             Keys.onPressed: function(event) {
-                window.debugLog("🔵 Key pressed: " + event.key + " Global index: " + window.globalIndex + " Window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " Total: " + snippets.length)
-                switch (event.key) {
-                case Qt.Key_Escape:
+                // Handle escape key regardless of snippet state
+                if (event.key === Qt.Key_Escape) {
                     window.debugLog("🔴 Escape pressed - dismissing overlay")
-                    window.showPerformanceSummary()
+                    if (window.hasValidSnippets) {
+                        window.showPerformanceSummary()
+                    }
                     window.dismissed()
                     event.accepted = true
-                    break
+                    return
+                }
+                
+                // Only process navigation keys when we have valid snippets
+                if (!window.hasValidSnippets) {
+                    window.debugLog("🚫 Navigation disabled - no valid snippets available")
+                    return
+                }
+                
+                window.debugLog("🔵 Key pressed: " + event.key + " Global index: " + window.globalIndex + " Window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " Total: " + snippets.length)
+                switch (event.key) {
                 case Qt.Key_Up:
                     window.debugLog("🔼 Up arrow pressed - currentIndex: " + window.currentIndex + " windowStart: " + window.windowStart)
                     if (window.currentIndex > 0) {

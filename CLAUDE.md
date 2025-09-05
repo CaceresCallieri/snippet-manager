@@ -166,8 +166,9 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 
 ### Current Working Features
 - ✅ Overlay shows immediately on command execution
-- ✅ JSON-based snippet loading from data/snippets.json (8 test snippets)
+- ✅ JSON-based snippet loading from data/snippets.json (10 test snippets)
 - ✅ Simplified JSON schema (title + content only, no id field)
+- ✅ **Empty state handling** - graceful UI when no snippets available with clear user guidance
 - ✅ **Sliding window navigation** - access ALL snippets while displaying only 5
 - ✅ **Wrap-around navigation** - infinite scrolling in both directions
 - ✅ **Smart header feedback** - shows current position "X of Y snippets"
@@ -390,3 +391,61 @@ For environments where `no_warps = true` is required or for more reliable focus 
 - **Centralized configuration**: All UI dimensions, timing, and styling values in `/utils/Constants.qml` singleton
 - **QML singleton pattern**: Use `import "../utils"` then `Constants.propertyName` for consistent values
 - **Shell script integration**: Timing constants documented in comments for bash script reference
+
+## Error Handling & User Notifications
+
+### Desktop Notification Strategy
+For critical errors and warnings that users need to be aware of, implement desktop notifications using `notify-send`:
+
+**Implementation Pattern:**
+```javascript
+// In shell.qml for critical errors
+function notifyUser(title, message, urgency = "normal") {
+    const command = ["notify-send", "-u", urgency, title, message]
+    Quickshell.execDetached(command)
+}
+
+// Usage examples:
+// notifyUser("Snippet Manager", "No snippets found - check data/snippets.json", "low")
+// notifyUser("Snippet Manager Error", "Failed to load snippets file", "critical")
+```
+
+**Notification Categories:**
+- **Critical**: File system errors, JSON parsing failures, security violations
+- **Normal**: Empty snippets, validation warnings, configuration issues  
+- **Low**: Informational messages, successful operations
+
+**Benefits:**
+- **Non-blocking**: User sees errors even when overlay is dismissed
+- **System integration**: Uses standard desktop notification system
+- **Severity awareness**: Different urgency levels for different error types
+- **Debugging aid**: Helps identify issues in production environments
+
+**Future Implementation**: Comprehensive error notification system covering all validation failures, file system errors, and critical application states.
+
+## Empty State Handling Implementation
+
+### Dedicated Empty State UI
+**Component**: `/ui/EmptyStateView.qml` - Modular component for clean empty state presentation
+
+**Architecture**: Conditional UI rendering based on `hasValidSnippets` property
+- Empty state UI shown when `snippets.length === 0`
+- Normal snippet list hidden during empty state
+- Conditional header and instruction text
+
+**User Experience**:
+- Clear "No Snippets Available" message
+- Helpful guidance: "Add snippets to data/snippets.json to get started"  
+- File location reference for easy access
+- Clean, professional appearance without cluttering fake data
+
+**Navigation Safety**: 
+- Navigation keys disabled when no valid snippets available
+- Escape key always functional regardless of snippet state
+- Prevents crashes and undefined behavior with empty arrays
+- Debug logging: "🚫 Navigation disabled - no valid snippets available"
+
+**Data Model Integrity**:
+- Clean empty array `[]` when no valid snippets (no fake entries)
+- Enhanced validation warnings distinguish between empty JSON vs filtered results
+- Graceful handling of missing files, parse errors, and validation failures

@@ -70,12 +70,21 @@ ShellRoot {
                         if (Array.isArray(parsed)) {
                             // Apply validation with filtering for graceful degradation
                             const validSnippets = parsed.filter((snippet, index) => root.validateSnippet(snippet, index))
-                            root.snippets = validSnippets
-                            console.log(`✅ Validated ${validSnippets.length} of ${parsed.length} snippets from JSON file`)
-                            if (validSnippets.length < parsed.length) {
-                                console.warn(`⚠️  ${parsed.length - validSnippets.length} invalid snippets were filtered out`)
+                            
+                            if (validSnippets.length === 0) {
+                                console.warn("⚠️ No valid snippets found after validation")
+                                if (parsed.length > 0) {
+                                    console.warn(`⚠️ All ${parsed.length} snippets were filtered out due to validation errors`)
+                                }
+                                root.snippets = [] // Keep clean empty array - UI will handle empty state
+                            } else {
+                                root.snippets = validSnippets
+                                console.log(`✅ Validated ${validSnippets.length} of ${parsed.length} snippets from JSON file`)
+                                if (validSnippets.length < parsed.length) {
+                                    console.warn(`⚠️ ${parsed.length - validSnippets.length} invalid snippets were filtered out`)
+                                }
+                                root.debugLog("🔍 Valid snippets loaded: " + JSON.stringify(root.snippets, null, 2))
                             }
-                            root.debugLog("🔍 Valid snippets loaded: " + JSON.stringify(root.snippets, null, 2))
                         } else {
                             console.error("❌ Invalid JSON: expected array, got " + typeof parsed)
                             root.snippets = []
