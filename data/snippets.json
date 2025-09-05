@@ -17,7 +17,7 @@
 	},
 	{
 		"title": "Next issue with deep thinking",
-		"content": "We will tackle the - issue next, explore the code and make sure the fix is still relevant, if so, think deeply to design the simplest, most robust plan of implementation"
+		"content": "We will tackle the [issue] issue next, explore the code and make sure the fix is still relevant, if so, think deeply to design the simplest, most robust plan of implementation"
 	},
 	{
 		"title": "Git commit message template",

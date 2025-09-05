@@ -261,6 +261,29 @@ printf '%s' "$text" | wtype -s 5 -
 3. **Command injection prevention**: Stdin approach eliminates shell command execution risks
 4. **Defense in depth**: Multiple layers protect against malicious snippet content
 
+### Input Validation System (P1 Critical Security)
+Comprehensive validation in `shell.qml` prevents crashes and security issues from malformed snippets:
+
+**Validation Layers**:
+1. **Object Structure**: Ensures items are objects, not null/string/number
+2. **Required Fields**: Validates presence of `title` and `content` properties
+3. **Type Safety**: Enforces string types for both title and content
+4. **Content Limits**: 
+   - Title: 200 characters maximum
+   - Content: 10KB maximum (consistent with inject-text.sh security boundary)
+
+**Graceful Degradation**:
+- Invalid snippets filtered out with detailed console warnings
+- Valid snippets continue loading normally
+- Application never crashes from malformed JSON data
+- Users receive clear feedback about validation failures
+
+**Security Benefits**:
+- Prevents UI crashes from missing properties (`snippet.title` on undefined objects)
+- Blocks memory exhaustion from oversized content
+- Ensures consistent security boundaries between QML and shell script layers
+- Eliminates type confusion attacks (non-string content causing injection failures)
+
 ### Why This Approach Works
 1. **Detached execution**: Script runs independently after QuickShell exits
 2. **Proper timing**: 0.25s delay allows focus to stabilize
