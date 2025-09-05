@@ -17,6 +17,39 @@ ShellRoot {
         }
     }
     
+    function notifyUser(title, message, urgency = "normal") {
+        try {
+            const command = ["notify-send", "-u", urgency, title, message]
+            Quickshell.execDetached(command)
+        } catch (error) {
+            console.error("❌ Failed to send notification:", error)
+        }
+    }
+    
+    function validateSnippetData(snippet) {
+        if (!snippet) {
+            console.error("❌ Snippet data is null or undefined")
+            return false
+        }
+        
+        if (typeof snippet !== 'object') {
+            console.error("❌ Snippet data is not an object:", typeof snippet)
+            return false
+        }
+        
+        if (!snippet.hasOwnProperty('title') || typeof snippet.title !== 'string') {
+            console.error("❌ Snippet missing valid title property")
+            return false
+        }
+        
+        if (!snippet.hasOwnProperty('content') || typeof snippet.content !== 'string') {
+            console.error("❌ Snippet missing valid content property")
+            return false
+        }
+        
+        return true
+    }
+    
     function validateSnippet(snippet, index) {
         // Level 1: Object structure validation
         if (!snippet || typeof snippet !== 'object') {
@@ -131,12 +164,36 @@ ShellRoot {
                 console.log("📋 Selected snippet:", snippet.title)
                 root.debugLog("🚀 Launching detached script with text argument...")
                 
-                // Use execDetached with command array (like DesktopAction.command)
-                const scriptPath = Qt.resolvedUrl("inject-text.sh").toString().replace("file://", "")
-                var command = [scriptPath, snippet.content]
-                Quickshell.execDetached(command)
+                // Validate snippet data before processing
+                if (!root.validateSnippetData(snippet)) {
+                    console.error("❌ Invalid snippet data - cannot inject text")
+                    root.notifyUser("Snippet Manager Error", "Invalid snippet data - text injection failed", "critical")
+                    Qt.quit()
+                    return
+                }
                 
-                // Exit immediately
+                try {
+                    // Use execDetached with command array (like DesktopAction.command)
+                    const scriptPath = Qt.resolvedUrl("inject-text.sh").toString().replace("file://", "")
+                    
+                    // Validate script path exists
+                    if (!scriptPath || scriptPath.length === 0) {
+                        throw new Error("Script path could not be resolved")
+                    }
+                    
+                    var command = [scriptPath, snippet.content]
+                    root.debugLog("🔧 Executing command: " + JSON.stringify(command))
+                    
+                    Quickshell.execDetached(command)
+                    root.debugLog("✅ Text injection command launched successfully")
+                } catch (error) {
+                    console.error("❌ Failed to execute text injection script:", error)
+                    root.notifyUser("Snippet Manager Error", 
+                                  "Failed to inject text: " + error.message, 
+                                  "critical")
+                }
+                
+                // Exit immediately (even on error - user should be notified via notification)
                 Qt.quit()
             }
             

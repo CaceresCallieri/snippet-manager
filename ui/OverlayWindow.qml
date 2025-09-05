@@ -50,6 +50,34 @@ PanelWindow {
         console.log("   - Performance: OPTIMIZED ✅")
     }
     
+    function validateAndSelectSnippet(snippet, source) {
+        window.debugLog("🔍 Validating snippet from " + source + ": " + (snippet ? snippet.title : "null"))
+        
+        if (!snippet) {
+            console.error("❌ Snippet selection failed - null snippet from " + source)
+            return false
+        }
+        
+        if (typeof snippet !== 'object') {
+            console.error("❌ Snippet selection failed - invalid object type from " + source + ": " + typeof snippet)
+            return false
+        }
+        
+        if (!snippet.hasOwnProperty('title') || typeof snippet.title !== 'string') {
+            console.error("❌ Snippet selection failed - invalid title from " + source)
+            return false
+        }
+        
+        if (!snippet.hasOwnProperty('content') || typeof snippet.content !== 'string') {
+            console.error("❌ Snippet selection failed - invalid content from " + source)
+            return false
+        }
+        
+        window.debugLog("✅ Snippet validation passed from " + source + ": " + snippet.title)
+        window.snippetSelected(snippet)
+        return true
+    }
+    
     
     anchors.top: true
     margins.top: screen.height * Constants.overlayTopOffsetFraction
@@ -156,10 +184,19 @@ PanelWindow {
                             onClicked: {
                                 window.debugLog("🖱️ Clicked snippet at local index: " + index + " (global: " + (window.windowStart + index) + ")")
                                 window.currentIndex = index
-                                window.snippetSelected(modelData)
+                                
+                                // Validate snippet data before selection
+                                if (!window.validateAndSelectSnippet(modelData, "mouse_click")) {
+                                    window.debugLog("❌ Mouse click validation failed for index: " + index)
+                                }
                             }
                             onEntered: {
-                                window.currentIndex = index
+                                // Validate index bounds before updating currentIndex
+                                if (index >= 0 && index < displayedSnippets.length) {
+                                    window.currentIndex = index
+                                } else {
+                                    window.debugLog("❌ Mouse hover index out of bounds: " + index + " (max: " + (displayedSnippets.length - 1) + ")")
+                                }
                             }
                         }
                     }
@@ -213,48 +250,84 @@ PanelWindow {
                 switch (event.key) {
                 case Qt.Key_Up:
                     window.debugLog("🔼 Up arrow pressed - currentIndex: " + window.currentIndex + " windowStart: " + window.windowStart)
+                    
+                    // Capture atomic snapshot for safe navigation
+                    const currentSnippetsLength = snippets.length
+                    
+                    if (currentSnippetsLength === 0) {
+                        window.debugLog("❌ Navigation ignored - no snippets available")
+                        break
+                    }
+                    
                     if (window.currentIndex > 0) {
                         // Move cursor up within window
                         window.currentIndex--
                         window.debugLog("✅ Moved up to local index: " + window.currentIndex + " (global: " + window.globalIndex + ")")
                     } else if (window.windowStart > 0) {
                         // Scroll window up by 1, keep cursor at top
-                        window.windowStart--
-                        window.debugLog("🔄 Scrolled window up - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
+                        window.windowStart = Math.max(0, window.windowStart - 1)
+                        window.debugLog("🔄 Scrolled window up - new window: " + window.windowStart + "-" + Math.min(window.windowStart + displayedSnippets.length - 1, currentSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
                     } else {
-                        // Wrap around to last snippet
-                        window.windowStart = Math.max(0, snippets.length - window.maxDisplayed)
-                        window.currentIndex = Math.min(window.maxDisplayed - 1, snippets.length - 1 - window.windowStart)
-                        window.debugLog("🔄 Wrapped around to bottom - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
+                        // Wrap around to last snippet with bounds checking
+                        window.windowStart = Math.max(0, currentSnippetsLength - window.maxDisplayed)
+                        window.currentIndex = Math.min(window.maxDisplayed - 1, currentSnippetsLength - 1 - window.windowStart)
+                        window.debugLog("🔄 Wrapped around to bottom - new window: " + window.windowStart + "-" + Math.min(window.windowStart + displayedSnippets.length - 1, currentSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
                     }
                     event.accepted = true
                     break
                 case Qt.Key_Down:
                     window.debugLog("🔽 Down arrow pressed - currentIndex: " + window.currentIndex + " windowStart: " + window.windowStart)
-                    if (window.currentIndex < displayedSnippets.length - 1) {
+                    
+                    // Capture atomic snapshot for safe navigation  
+                    const downSnippetsLength = snippets.length
+                    const downDisplayedLength = displayedSnippets.length
+                    
+                    if (downSnippetsLength === 0) {
+                        window.debugLog("❌ Navigation ignored - no snippets available")
+                        break
+                    }
+                    
+                    if (window.currentIndex < downDisplayedLength - 1) {
                         // Move cursor down within window
                         window.currentIndex++
                         window.debugLog("✅ Moved down to local index: " + window.currentIndex + " (global: " + window.globalIndex + ")")
-                    } else if (window.windowStart + window.maxDisplayed < snippets.length) {
+                    } else if (window.windowStart + window.maxDisplayed < downSnippetsLength) {
                         // Scroll window down by 1, keep cursor at bottom
-                        window.windowStart++
-                        window.debugLog("🔄 Scrolled window down - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
+                        window.windowStart = Math.min(window.windowStart + 1, downSnippetsLength - 1)
+                        window.debugLog("🔄 Scrolled window down - new window: " + window.windowStart + "-" + Math.min(window.windowStart + displayedSnippets.length - 1, downSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
                     } else {
                         // Wrap around to first snippet
                         window.windowStart = 0
                         window.currentIndex = 0
-                        window.debugLog("🔄 Wrapped around to top - new window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " (global: " + window.globalIndex + ")")
+                        window.debugLog("🔄 Wrapped around to top - new window: " + window.windowStart + "-" + Math.min(window.windowStart + displayedSnippets.length - 1, downSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
                     }
                     event.accepted = true
                     break
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
                     window.debugLog("🟢 Enter pressed - selecting snippet at global index: " + window.globalIndex)
-                    if (window.globalIndex >= 0 && window.globalIndex < snippets.length) {
-                        window.debugLog("✅ Selecting snippet: " + snippets[window.globalIndex].title)
-                        window.snippetSelected(snippets[window.globalIndex])
+                    
+                    // Capture atomic snapshot to prevent race conditions
+                    const currentSnippets = snippets
+                    const currentIndex = window.globalIndex
+                    
+                    // Validate bounds with snapshot
+                    if (currentIndex >= 0 && currentIndex < currentSnippets.length) {
+                        const selectedSnippet = currentSnippets[currentIndex]
+                        
+                        // Double-check snippet exists (additional safety)
+                        if (selectedSnippet) {
+                            window.debugLog("✅ Selecting snippet: " + selectedSnippet.title)
+                            
+                            // Use validation function for consistency
+                            if (!window.validateAndSelectSnippet(selectedSnippet, "keyboard_enter")) {
+                                window.debugLog("❌ Keyboard selection validation failed for index: " + currentIndex)
+                            }
+                        } else {
+                            window.debugLog("❌ Snippet at index " + currentIndex + " is null or undefined")
+                        }
                     } else {
-                        window.debugLog("❌ Invalid global index for selection")
+                        window.debugLog("❌ Invalid global index for selection: " + currentIndex + " (bounds: 0-" + (currentSnippets.length - 1) + ")")
                     }
                     event.accepted = true
                     break
