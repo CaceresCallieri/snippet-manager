@@ -6,13 +6,13 @@ import "ui" as UI
 ShellRoot {
     id: root
     
-    property bool shouldShowOverlay: true
+    property bool isOverlayVisible: true
     // Debug mode toggle - change this to true/false as needed
-    property bool debugMode: true
-    property var snippets: []
+    property bool isDebugLoggingEnabled: true
+    property var loadedValidSnippets: []
     
     function debugLog(message) {
-        if (debugMode) {
+        if (isDebugLoggingEnabled) {
             console.log(message)
         }
     }
@@ -109,18 +109,18 @@ ShellRoot {
                                 if (parsed.length > 0) {
                                     console.warn(`⚠️ All ${parsed.length} snippets were filtered out due to validation errors`)
                                 }
-                                root.snippets = [] // Keep clean empty array - UI will handle empty state
+                                root.loadedValidSnippets = [] // Keep clean empty array - UI will handle empty state
                             } else {
-                                root.snippets = validSnippets
+                                root.loadedValidSnippets = validSnippets
                                 console.log(`✅ Validated ${validSnippets.length} of ${parsed.length} snippets from JSON file`)
                                 if (validSnippets.length < parsed.length) {
                                     console.warn(`⚠️ ${parsed.length - validSnippets.length} invalid snippets were filtered out`)
                                 }
-                                root.debugLog("🔍 Valid snippets loaded: " + JSON.stringify(root.snippets, null, 2))
+                                root.debugLog("🔍 Valid snippets loaded: " + JSON.stringify(root.loadedValidSnippets, null, 2))
                             }
                         } else {
                             console.error("❌ Invalid JSON: expected array, got " + typeof parsed)
-                            root.snippets = []
+                            root.loadedValidSnippets = []
                         }
                     } catch (e) {
                         console.error("❌ Failed to parse snippets JSON: " + e.message)
@@ -142,7 +142,7 @@ ShellRoot {
         
         onPressed: {
             console.log("GlobalShortcut pressed - toggling overlay")
-            root.shouldShowOverlay = !root.shouldShowOverlay
+            root.isOverlayVisible = !root.isOverlayVisible
         }
     }
     
@@ -154,11 +154,11 @@ ShellRoot {
     
     // Use LazyLoader for memory efficiency when overlay isn't shown
     LazyLoader {
-        active: root.shouldShowOverlay
+        active: root.isOverlayVisible
         
         UI.OverlayWindow {
-            snippets: root.snippets
-            debugMode: root.debugMode
+            snippets: root.loadedValidSnippets
+            isDebugLoggingEnabled: root.isDebugLoggingEnabled
             
             onSnippetSelected: function(snippet) {
                 console.log("📋 Selected snippet:", snippet.title)

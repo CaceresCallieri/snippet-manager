@@ -8,44 +8,44 @@ PanelWindow {
     
     property var snippets: []
     property int currentIndex: 0
-    property bool debugMode: false
-    property int maxDisplayed: Constants.maxVisibleSnippets
-    property int windowStart: 0
+    property bool isDebugLoggingEnabled: false
+    property int maxVisibleSnippets: Constants.maxVisibleSnippets
+    property int visibleRangeStartIndex: 0
     property bool hasValidSnippets: snippets.length > 0
     
     // Performance measurement (external counters to avoid binding loops)
-    property int calculationCount: 0
+    property int displayCalculationCount: 0
     
-    readonly property var displayedSnippets: {
+    readonly property var visibleSnippetWindow: {
         if (snippets.length === 0) return []
-        const end = Math.min(windowStart + maxDisplayed, snippets.length)
-        return snippets.slice(windowStart, end)
+        const end = Math.min(visibleRangeStartIndex + maxVisibleSnippets, snippets.length)
+        return snippets.slice(visibleRangeStartIndex, end)
     }
     
     // Optional debug tracking - separate property avoids binding loops
-    onDisplayedSnippetsChanged: trackCalculation()
+    onVisibleSnippetWindowChanged: trackCalculation()
     
-    property int globalIndex: windowStart + currentIndex
+    property int globalIndex: visibleRangeStartIndex + currentIndex
     
     signal snippetSelected(var snippet)
     signal dismissed()
     
     function debugLog(message) {
-        if (debugMode) {
+        if (isDebugLoggingEnabled) {
             console.log(message)
         }
     }
     
     function trackCalculation() {
-        calculationCount++
-        if (debugMode) {
-            console.log("📊 displayedSnippets recalculated (count: " + calculationCount + ")")
+        displayCalculationCount++
+        if (isDebugLoggingEnabled) {
+            console.log("📊 visibleSnippetWindow recalculated (count: " + displayCalculationCount + ")")
         }
     }
     
     function showPerformanceSummary() {
         console.log("🔍 PERFORMANCE SUMMARY (BINDING LOOP FIX APPLIED):")
-        console.log("   - Total displayedSnippets calculations: " + calculationCount)
+        console.log("   - Total visibleSnippetWindow calculations: " + displayCalculationCount)
         console.log("   - Binding loops: ELIMINATED ✅")
         console.log("   - Performance: OPTIMIZED ✅")
     }
@@ -156,7 +156,7 @@ PanelWindow {
                 spacing: Constants.itemSpacing
                 
                 Repeater {
-                    model: displayedSnippets
+                    model: visibleSnippetWindow
                     
                     Rectangle {
                         width: snippetColumn.width
@@ -182,7 +182,7 @@ PanelWindow {
                             anchors.fill: parent
                             hoverEnabled: true
                             onClicked: {
-                                window.debugLog("🖱️ Clicked snippet at local index: " + index + " (global: " + (window.windowStart + index) + ")")
+                                window.debugLog("🖱️ Clicked snippet at local index: " + index + " (global: " + (window.visibleRangeStartIndex + index) + ")")
                                 window.currentIndex = index
                                 
                                 // Validate snippet data before selection
@@ -192,10 +192,10 @@ PanelWindow {
                             }
                             onEntered: {
                                 // Validate index bounds before updating currentIndex
-                                if (index >= 0 && index < displayedSnippets.length) {
+                                if (index >= 0 && index < visibleSnippetWindow.length) {
                                     window.currentIndex = index
                                 } else {
-                                    window.debugLog("❌ Mouse hover index out of bounds: " + index + " (max: " + (displayedSnippets.length - 1) + ")")
+                                    window.debugLog("❌ Mouse hover index out of bounds: " + index + " (max: " + (visibleSnippetWindow.length - 1) + ")")
                                 }
                             }
                         }
@@ -246,10 +246,10 @@ PanelWindow {
                     return
                 }
                 
-                window.debugLog("🔵 Key pressed: " + event.key + " Global index: " + window.globalIndex + " Window: " + window.windowStart + "-" + (window.windowStart + displayedSnippets.length - 1) + " Total: " + snippets.length)
+                window.debugLog("🔵 Key pressed: " + event.key + " Global index: " + window.globalIndex + " Window: " + window.visibleRangeStartIndex + "-" + (window.visibleRangeStartIndex + visibleSnippetWindow.length - 1) + " Total: " + snippets.length)
                 switch (event.key) {
                 case Qt.Key_Up:
-                    window.debugLog("🔼 Up arrow pressed - currentIndex: " + window.currentIndex + " windowStart: " + window.windowStart)
+                    window.debugLog("🔼 Up arrow pressed - currentIndex: " + window.currentIndex + " visibleRangeStartIndex: " + window.visibleRangeStartIndex)
                     
                     // Capture atomic snapshot for safe navigation
                     const currentSnippetsLength = snippets.length
@@ -263,24 +263,24 @@ PanelWindow {
                         // Move cursor up within window
                         window.currentIndex--
                         window.debugLog("✅ Moved up to local index: " + window.currentIndex + " (global: " + window.globalIndex + ")")
-                    } else if (window.windowStart > 0) {
+                    } else if (window.visibleRangeStartIndex > 0) {
                         // Scroll window up by 1, keep cursor at top
-                        window.windowStart = Math.max(0, window.windowStart - 1)
-                        window.debugLog("🔄 Scrolled window up - new window: " + window.windowStart + "-" + Math.min(window.windowStart + displayedSnippets.length - 1, currentSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
+                        window.visibleRangeStartIndex = Math.max(0, window.visibleRangeStartIndex - 1)
+                        window.debugLog("🔄 Scrolled window up - new window: " + window.visibleRangeStartIndex + "-" + Math.min(window.visibleRangeStartIndex + visibleSnippetWindow.length - 1, currentSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
                     } else {
                         // Wrap around to last snippet with bounds checking
-                        window.windowStart = Math.max(0, currentSnippetsLength - window.maxDisplayed)
-                        window.currentIndex = Math.min(window.maxDisplayed - 1, currentSnippetsLength - 1 - window.windowStart)
-                        window.debugLog("🔄 Wrapped around to bottom - new window: " + window.windowStart + "-" + Math.min(window.windowStart + displayedSnippets.length - 1, currentSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
+                        window.visibleRangeStartIndex = Math.max(0, currentSnippetsLength - window.maxVisibleSnippets)
+                        window.currentIndex = Math.min(window.maxVisibleSnippets - 1, currentSnippetsLength - 1 - window.visibleRangeStartIndex)
+                        window.debugLog("🔄 Wrapped around to bottom - new window: " + window.visibleRangeStartIndex + "-" + Math.min(window.visibleRangeStartIndex + visibleSnippetWindow.length - 1, currentSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
                     }
                     event.accepted = true
                     break
                 case Qt.Key_Down:
-                    window.debugLog("🔽 Down arrow pressed - currentIndex: " + window.currentIndex + " windowStart: " + window.windowStart)
+                    window.debugLog("🔽 Down arrow pressed - currentIndex: " + window.currentIndex + " visibleRangeStartIndex: " + window.visibleRangeStartIndex)
                     
                     // Capture atomic snapshot for safe navigation  
                     const downSnippetsLength = snippets.length
-                    const downDisplayedLength = displayedSnippets.length
+                    const downDisplayedLength = visibleSnippetWindow.length
                     
                     if (downSnippetsLength === 0) {
                         window.debugLog("❌ Navigation ignored - no snippets available")
@@ -291,15 +291,15 @@ PanelWindow {
                         // Move cursor down within window
                         window.currentIndex++
                         window.debugLog("✅ Moved down to local index: " + window.currentIndex + " (global: " + window.globalIndex + ")")
-                    } else if (window.windowStart + window.maxDisplayed < downSnippetsLength) {
+                    } else if (window.visibleRangeStartIndex + window.maxVisibleSnippets < downSnippetsLength) {
                         // Scroll window down by 1, keep cursor at bottom
-                        window.windowStart = Math.min(window.windowStart + 1, downSnippetsLength - 1)
-                        window.debugLog("🔄 Scrolled window down - new window: " + window.windowStart + "-" + Math.min(window.windowStart + displayedSnippets.length - 1, downSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
+                        window.visibleRangeStartIndex = Math.min(window.visibleRangeStartIndex + 1, downSnippetsLength - 1)
+                        window.debugLog("🔄 Scrolled window down - new window: " + window.visibleRangeStartIndex + "-" + Math.min(window.visibleRangeStartIndex + visibleSnippetWindow.length - 1, downSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
                     } else {
                         // Wrap around to first snippet
-                        window.windowStart = 0
+                        window.visibleRangeStartIndex = 0
                         window.currentIndex = 0
-                        window.debugLog("🔄 Wrapped around to top - new window: " + window.windowStart + "-" + Math.min(window.windowStart + displayedSnippets.length - 1, downSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
+                        window.debugLog("🔄 Wrapped around to top - new window: " + window.visibleRangeStartIndex + "-" + Math.min(window.visibleRangeStartIndex + visibleSnippetWindow.length - 1, downSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
                     }
                     event.accepted = true
                     break

@@ -56,6 +56,7 @@ quickshell-snippet-manager/
 - Auto-quit functionality for launcher-style behavior
 - HyprlandFocusGrab for reliable keyboard input capture
 - Conditional debug logging system with emoji markers
+- **Self-documenting variable names** - All UI and state variables use clear, descriptive names
 
 ## Key Requirements
 
@@ -108,6 +109,27 @@ User handles SUPER_L registration via Hyprland configuration.
 - All keyboard navigation works smoothly
 - Text injection succeeds for simple text content
 - Clean code structure supports easy Phase 2 integration
+
+## Code Quality Standards
+
+### Variable Naming Conventions
+The codebase follows consistent, self-documenting naming patterns:
+
+**Navigation & Display Properties**:
+- `visibleRangeStartIndex` - Starting index of the visible snippet window
+- `maxVisibleSnippets` - Maximum number of snippets displayed simultaneously  
+- `visibleSnippetWindow` - Currently visible snippet array subset
+- `globalIndex` - Absolute position across all snippets (visibleRangeStartIndex + currentIndex)
+
+**State Management Properties**:
+- `isOverlayVisible` - Boolean overlay visibility state
+- `isDebugLoggingEnabled` - Debug logging toggle state
+- `loadedValidSnippets` - Array of validated snippets from JSON file
+
+**Performance Tracking**:
+- `displayCalculationCount` - Tracks visibleSnippetWindow recalculation frequency
+
+These names immediately communicate purpose and reduce cognitive load for maintenance and development.
 
 ## Development Resources
 
