@@ -50,6 +50,74 @@ PanelWindow {
         console.log("   - Performance: OPTIMIZED ✅")
     }
     
+    // Navigation helper functions - condition predicates
+    function canMoveUpWithinWindow() {
+        return currentIndex > 0
+    }
+    
+    function canScrollWindowUp() {
+        return visibleRangeStartIndex > 0
+    }
+    
+    function canMoveDownWithinWindow() {
+        return currentIndex < visibleSnippetWindow.length - 1
+    }
+    
+    function canScrollWindowDown() {
+        return visibleRangeStartIndex + maxVisibleSnippets < snippets.length
+    }
+    
+    // Navigation helper functions - action functions
+    function moveUpWithinWindow() {
+        currentIndex--
+        debugLog(`🎯 Moved up within window to index ${currentIndex} (global: ${globalIndex})`)
+    }
+    
+    function scrollWindowUp() {
+        visibleRangeStartIndex = Math.max(0, visibleRangeStartIndex - 1)
+        debugLog(`🔄 Scrolled window up, start: ${visibleRangeStartIndex} (global: ${globalIndex})`)
+    }
+    
+    function moveDownWithinWindow() {
+        currentIndex++
+        debugLog(`🎯 Moved down within window to index ${currentIndex} (global: ${globalIndex})`)
+    }
+    
+    function scrollWindowDown() {
+        visibleRangeStartIndex = Math.min(visibleRangeStartIndex + 1, snippets.length - 1)
+        debugLog(`🔄 Scrolled window down, start: ${visibleRangeStartIndex} (global: ${globalIndex})`)
+    }
+    
+    // Navigation helper functions - wrap-around calculations
+    function calculateBottomWrapPosition() {
+        const windowStart = Math.max(0, snippets.length - maxVisibleSnippets)
+        const cursorIndex = Math.min(maxVisibleSnippets - 1, snippets.length - 1 - windowStart)
+        return { windowStart, cursorIndex }
+    }
+    
+    function calculateTopWrapPosition() {
+        return { windowStart: 0, cursorIndex: 0 }
+    }
+    
+    function wrapToBottom() {
+        const position = calculateBottomWrapPosition()
+        visibleRangeStartIndex = position.windowStart
+        currentIndex = position.cursorIndex
+        debugLog(`🔄 Wrapped to bottom - window: ${visibleRangeStartIndex}, cursor: ${currentIndex} (global: ${globalIndex})`)
+    }
+    
+    function wrapToTop() {
+        const position = calculateTopWrapPosition()
+        visibleRangeStartIndex = position.windowStart
+        currentIndex = position.cursorIndex
+        debugLog(`🔄 Wrapped to top - window: ${visibleRangeStartIndex}, cursor: ${currentIndex} (global: ${globalIndex})`)
+    }
+    
+    // Centralized state management
+    function updateNavigationState(direction) {
+        debugLog(`🔵 Navigation ${direction}: Global ${globalIndex}, Window ${visibleRangeStartIndex}-${visibleRangeStartIndex + maxVisibleSnippets - 1}, Total: ${snippets.length}`)
+    }
+    
     function validateAndSelectSnippet(snippet, source) {
         window.debugLog("🔍 Validating snippet from " + source + ": " + (snippet ? snippet.title : "null"))
         
@@ -249,58 +317,35 @@ PanelWindow {
                 window.debugLog("🔵 Key pressed: " + event.key + " Global index: " + window.globalIndex + " Window: " + window.visibleRangeStartIndex + "-" + (window.visibleRangeStartIndex + visibleSnippetWindow.length - 1) + " Total: " + snippets.length)
                 switch (event.key) {
                 case Qt.Key_Up:
-                    window.debugLog("🔼 Up arrow pressed - currentIndex: " + window.currentIndex + " visibleRangeStartIndex: " + window.visibleRangeStartIndex)
-                    
-                    // Capture atomic snapshot for safe navigation
-                    const currentSnippetsLength = snippets.length
-                    
-                    if (currentSnippetsLength === 0) {
+                    if (snippets.length === 0) {
                         window.debugLog("❌ Navigation ignored - no snippets available")
                         break
                     }
                     
-                    if (window.currentIndex > 0) {
-                        // Move cursor up within window
-                        window.currentIndex--
-                        window.debugLog("✅ Moved up to local index: " + window.currentIndex + " (global: " + window.globalIndex + ")")
-                    } else if (window.visibleRangeStartIndex > 0) {
-                        // Scroll window up by 1, keep cursor at top
-                        window.visibleRangeStartIndex = Math.max(0, window.visibleRangeStartIndex - 1)
-                        window.debugLog("🔄 Scrolled window up - new window: " + window.visibleRangeStartIndex + "-" + Math.min(window.visibleRangeStartIndex + visibleSnippetWindow.length - 1, currentSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
+                    if (window.canMoveUpWithinWindow()) {
+                        window.moveUpWithinWindow()
+                    } else if (window.canScrollWindowUp()) {
+                        window.scrollWindowUp()
                     } else {
-                        // Wrap around to last snippet with bounds checking
-                        window.visibleRangeStartIndex = Math.max(0, currentSnippetsLength - window.maxVisibleSnippets)
-                        window.currentIndex = Math.min(window.maxVisibleSnippets - 1, currentSnippetsLength - 1 - window.visibleRangeStartIndex)
-                        window.debugLog("🔄 Wrapped around to bottom - new window: " + window.visibleRangeStartIndex + "-" + Math.min(window.visibleRangeStartIndex + visibleSnippetWindow.length - 1, currentSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
+                        window.wrapToBottom()
                     }
+                    window.updateNavigationState("UP")
                     event.accepted = true
                     break
                 case Qt.Key_Down:
-                    window.debugLog("🔽 Down arrow pressed - currentIndex: " + window.currentIndex + " visibleRangeStartIndex: " + window.visibleRangeStartIndex)
-                    
-                    // Capture atomic snapshot for safe navigation  
-                    const downSnippetsLength = snippets.length
-                    const downDisplayedLength = visibleSnippetWindow.length
-                    
-                    if (downSnippetsLength === 0) {
+                    if (snippets.length === 0) {
                         window.debugLog("❌ Navigation ignored - no snippets available")
                         break
                     }
                     
-                    if (window.currentIndex < downDisplayedLength - 1) {
-                        // Move cursor down within window
-                        window.currentIndex++
-                        window.debugLog("✅ Moved down to local index: " + window.currentIndex + " (global: " + window.globalIndex + ")")
-                    } else if (window.visibleRangeStartIndex + window.maxVisibleSnippets < downSnippetsLength) {
-                        // Scroll window down by 1, keep cursor at bottom
-                        window.visibleRangeStartIndex = Math.min(window.visibleRangeStartIndex + 1, downSnippetsLength - 1)
-                        window.debugLog("🔄 Scrolled window down - new window: " + window.visibleRangeStartIndex + "-" + Math.min(window.visibleRangeStartIndex + visibleSnippetWindow.length - 1, downSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
+                    if (window.canMoveDownWithinWindow()) {
+                        window.moveDownWithinWindow()
+                    } else if (window.canScrollWindowDown()) {
+                        window.scrollWindowDown()
                     } else {
-                        // Wrap around to first snippet
-                        window.visibleRangeStartIndex = 0
-                        window.currentIndex = 0
-                        window.debugLog("🔄 Wrapped around to top - new window: " + window.visibleRangeStartIndex + "-" + Math.min(window.visibleRangeStartIndex + visibleSnippetWindow.length - 1, downSnippetsLength - 1) + " (global: " + window.globalIndex + ")")
+                        window.wrapToTop()
                     }
+                    window.updateNavigationState("DOWN")
                     event.accepted = true
                     break
                 case Qt.Key_Return:

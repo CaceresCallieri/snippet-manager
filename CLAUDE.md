@@ -131,6 +131,17 @@ The codebase follows consistent, self-documenting naming patterns:
 
 These names immediately communicate purpose and reduce cognitive load for maintenance and development.
 
+### Navigation Logic Architecture
+The navigation system uses extracted helper functions for maintainability:
+
+**Helper Function Pattern**:
+- **Condition predicates**: `canMoveUpWithinWindow()`, `canScrollWindowUp()`, etc. - Return boolean for navigation state
+- **Action functions**: `moveUpWithinWindow()`, `scrollWindowUp()`, etc. - Perform state mutations with debug logging
+- **Calculation functions**: `calculateBottomWrapPosition()`, `calculateTopWrapPosition()` - Handle complex wrap-around math
+- **State management**: `updateNavigationState(direction)` - Centralized debug logging and state tracking
+
+**Benefits**: Navigation logic reduced from 85+ lines of nested conditionals to 20 lines of readable function calls. Each navigation behavior is isolated, testable, and reusable between Up/Down cases.
+
 ## Development Resources
 
 ### QuickShell Documentation
