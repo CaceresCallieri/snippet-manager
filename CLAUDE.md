@@ -159,7 +159,7 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 - ✅ **UI visibility**: Fixed with high-contrast design and proper Component structure
 - ✅ **Process API**: Fixed by removing non-existent `onErrorOccurred` property
 - ✅ **Keyboard navigation**: Fixed with HyprlandFocusGrab for reliable input capture
-- ✅ **Focus management**: Implemented proper focus chain with Qt.callLater for timing
+- ✅ **Focus management**: Coordinated focus system eliminates race conditions between Qt and HyprlandFocusGrab
 - ✅ **Debug system**: Working conditional logging with emoji markers for development
 - ✅ **Text injection**: Fixed with proper `Quickshell.execDetached()` syntax and detached script approach
 - ✅ **JSON loading reliability**: Fixed working directory dependency using Qt.resolvedUrl()
@@ -178,6 +178,7 @@ bind = SUPER SHIFT, SPACE, exec, qs -p /absolute/path/to/snippet-manager/shell.q
 - ✅ Clean UI with subtitle design (no numbers, clean titles)
 - ✅ Debug mode with comprehensive logging system
 - ✅ **Performance optimized** - eliminated binding loops in displayedSnippets property
+- ✅ **Focus reliability** - coordinated focus management prevents race conditions
 
 ### Sliding Window Navigation Implementation
 - **windowStart property**: Tracks the first snippet index in the visible window
@@ -221,6 +222,20 @@ onDisplayedSnippetsChanged: trackCalculation()
 - Optimal performance - recalculates only when dependencies change
 - Maintains all debug tracking functionality
 - Follows QML best practices for computed properties
+
+### Focus Management: Race Condition Fix
+**Issue**: Multiple simultaneous focus operations caused race conditions between Qt focus system and HyprlandFocusGrab.
+
+**Solution**:
+- Coordinated focus management using `HyprlandFocusGrab.onActiveChanged` handler
+- Eliminated competing focus operations in Component.onCompleted
+- Single, reliable focus establishment pathway
+
+**Benefits**:
+- Consistent keyboard input capture on every overlay show
+- No focus conflicts between Qt and Hyprland systems  
+- Better Wayland integration using native Hyprland focus management
+- Cleaner, more maintainable focus code
 
 ### Navigation Patterns (8 snippets, 5 displayed):
 ```

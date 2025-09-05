@@ -63,6 +63,15 @@ PanelWindow {
         windows: [window]
         active: true
         
+        onActiveChanged: {
+            if (active) {
+                // HyprlandFocusGrab is ready - now coordinate Qt focus
+                Qt.callLater(function() {
+                    keyHandler.forceActiveFocus()
+                    window.debugLog("🎯 Focus coordinated with HyprlandFocusGrab")
+                })
+            }
+        }
         
         onCleared: {
             window.debugLog("🔴 Focus grab cleared - dismissing overlay")
@@ -229,18 +238,6 @@ PanelWindow {
     
     Component.onCompleted: {
         console.log("OverlayWindow: Created with", snippets.length, "snippets")
-        window.debugLog("🎯 Setting focus to keyHandler")
-        // Try multiple approaches to gain active focus
-        keyHandler.focus = true
-        keyHandler.forceActiveFocus()
-        Qt.callLater(function() {
-            keyHandler.forceActiveFocus()
-            window.debugLog("🎯 After callLater - keyHandler focus: " + keyHandler.focus)
-            window.debugLog("🎯 After callLater - keyHandler activeFocus: " + keyHandler.activeFocus)
-        })
-        window.debugLog("🎯 keyHandler focus: " + keyHandler.focus)
-        window.debugLog("🎯 keyHandler activeFocus: " + keyHandler.activeFocus)
-        window.debugLog("🎯 window focus: " + window.focus)
-        window.debugLog("🎯 window activeFocus: " + window.activeFocus)
+        window.debugLog("🎯 Focus management delegated to HyprlandFocusGrab")
     }
 }
