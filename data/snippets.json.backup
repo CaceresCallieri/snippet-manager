@@ -13,15 +13,15 @@
 	},
 	{
 		"title": "Next issue",
-		"content": "We will tackle the [issue] issue next. Explore the code and make sure the fix is still relevant, if so, explain the problem and the benefits of fixing it. Design the simplest, most robust plan of implementation"
+		"content": "We will tackle the [issue] issue next, explore the code and make sure the fix is still relevant, if so, design the simplest, most robust plan of implementation"
 	},
 	{
 		"title": "Next issue with simple thinking",
-		"content": "We will tackle the [issue] issue next. Explore the code and make sure the fix is still relevant, if so, explain the problem and the benefits of fixing it. Think to design the simplest, most robust plan of implementation"
+		"content": "Explore the code and make sure the fix is still relevant, if so, explain the problem and the benefits of fixing it. Think to design the simplest, most robust plan of implementation"
 	},
 	{
 		"title": "Next issue with deep thinking",
-		"content": "We will tackle the [issue] issue next. Explore the code and make sure the fix is still relevant, if so, explain the problem and the benefits of fixing it. Think deeply to design the simplest, most robust plan of implementation"
+		"content": "We will tackle the [issue] issue next, explore the code and make sure the fix is still relevant, if so, think deeply to design the simplest, most robust plan of implementation"
 	},
 	{
 		"title": "Omit Claude refereneces",

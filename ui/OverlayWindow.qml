@@ -9,6 +9,7 @@ PanelWindow {
     property var snippets: []
     property int currentIndex: 0
     property bool isDebugLoggingEnabled: false
+    property var notifyUser: null
     property int maxVisibleSnippets: Constants.maxVisibleSnippets
     property int visibleRangeStartIndex: 0
     /**
@@ -288,21 +289,33 @@ PanelWindow {
         
         if (!snippet) {
             console.error("❌ Snippet selection failed - null snippet from " + source)
+            if (notifyUser) {
+                notifyUser("Snippet Manager Error", "Invalid snippet data - selection failed", "critical")
+            }
             return false
         }
         
         if (typeof snippet !== 'object') {
             console.error("❌ Snippet selection failed - invalid object type from " + source + ": " + typeof snippet)
+            if (notifyUser) {
+                notifyUser("Snippet Manager Error", "Corrupted snippet data detected", "critical")
+            }
             return false
         }
         
         if (!snippet.hasOwnProperty('title') || typeof snippet.title !== 'string') {
             console.error("❌ Snippet selection failed - invalid title from " + source)
+            if (notifyUser) {
+                notifyUser("Snippet Manager Error", "Snippet missing title property", "critical")
+            }
             return false
         }
         
         if (!snippet.hasOwnProperty('content') || typeof snippet.content !== 'string') {
             console.error("❌ Snippet selection failed - invalid content from " + source)
+            if (notifyUser) {
+                notifyUser("Snippet Manager Error", "Snippet missing content property", "critical")
+            }
             return false
         }
         

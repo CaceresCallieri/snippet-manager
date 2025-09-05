@@ -575,3 +575,30 @@ function notifyUser(title, message, urgency = "normal") {
 - Clean empty array `[]` when no valid snippets (no fake entries)
 - Enhanced validation warnings distinguish between empty JSON vs filtered results
 - Graceful handling of missing files, parse errors, and validation failures
+
+### Comprehensive Error Notification System
+Desktop notification system implemented using `notify-send` for all critical error states:
+
+**Coverage Areas**:
+- **Data Loading Failures**: HTTP errors, missing files, JSON parsing failures
+- **Validation Errors**: Empty snippets, malformed data, invalid properties
+- **UI Runtime Errors**: Corrupted snippet data, missing properties, selection failures
+
+**Implementation Pattern**:
+```javascript
+// In shell.qml - notification helper function already implemented
+function notifyUser(title, message, urgency = "normal") {
+    const command = ["notify-send", "-u", urgency, title, message]
+    Quickshell.execDetached(command)
+}
+
+// Critical error notifications integrated at key failure points
+// OverlayWindow receives notifyUser function via property passing
+```
+
+**Notification Categories**:
+- **Critical**: File system errors, JSON parsing failures, corrupted data
+- **Normal**: Validation warnings, configuration issues, all invalid snippets
+- **Low**: Empty snippets with user guidance, informational messages
+
+**Benefits**: Transforms silent failures into clear user feedback, eliminates confusion when snippet manager appears empty, improves troubleshooting without checking console logs.

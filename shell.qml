@@ -191,6 +191,13 @@ ShellRoot {
                                 console.warn("⚠️ No valid snippets found after validation")
                                 if (parsed.length > 0) {
                                     console.warn(`⚠️ All ${parsed.length} snippets were filtered out due to validation errors`)
+                                    root.notifyUser("Snippet Manager", 
+                                                  `All ${parsed.length} snippets failed validation - check data/snippets.json format`, 
+                                                  "normal")
+                                } else {
+                                    root.notifyUser("Snippet Manager", 
+                                                  "No snippets found - add snippets to data/snippets.json to get started", 
+                                                  "low")
                                 }
                                 root.loadedValidSnippets = [] // Keep clean empty array - UI will handle empty state
                             } else {
@@ -203,15 +210,24 @@ ShellRoot {
                             }
                         } else {
                             console.error("❌ Invalid JSON: expected array, got " + typeof parsed)
+                            root.notifyUser("Snippet Manager Error",
+                                          `Invalid JSON format: expected array, got ${typeof parsed}`,
+                                          "critical")
                             root.loadedValidSnippets = []
                         }
                     } catch (e) {
                         console.error("❌ Failed to parse snippets JSON: " + e.message)
-                        root.snippets = []
+                        root.notifyUser("Snippet Manager Error",
+                                      `Invalid JSON in snippets.json: ${e.message}`,
+                                      "critical")
+                        root.loadedValidSnippets = []
                     }
                 } else {
                     console.error("❌ Failed to load snippets file. Status: " + xhr.status)
-                    root.snippets = []
+                    root.notifyUser("Snippet Manager Error", 
+                                  `Failed to load snippets.json (Status: ${xhr.status})`, 
+                                  "critical")
+                    root.loadedValidSnippets = []
                 }
             }
         }
@@ -242,6 +258,9 @@ ShellRoot {
         UI.OverlayWindow {
             snippets: root.loadedValidSnippets
             isDebugLoggingEnabled: root.isDebugLoggingEnabled
+            
+            // Pass notification function for UI error handling
+            property var notifyUser: root.notifyUser
             
             onSnippetSelected: function(snippet) {
                 console.log("📋 Selected snippet:", snippet.title)
