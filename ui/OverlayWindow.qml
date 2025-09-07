@@ -17,7 +17,7 @@ PanelWindow {
      */
     NavigationController {
         id: navigationController
-        snippets: window.snippets
+        snippets: window.filteredSnippets
         isDebugLoggingEnabled: window.isDebugLoggingEnabled
         
         onSelectionChanged: {
@@ -27,12 +27,31 @@ PanelWindow {
     }
     
     /**
+     * Real-time filtered snippets based on search input
+     * Filters both title and content fields with case-insensitive matching
+     * 
+     * @returns {Array} Filtered array of snippets matching search term
+     */
+    property var filteredSnippets: {
+        if (!searchInput || !searchInput.text || searchInput.text.length === 0) {
+            return snippets
+        }
+        
+        const searchTerm = searchInput.text.toLowerCase()
+        return snippets.filter(snippet => {
+            const titleMatch = snippet.title.toLowerCase().includes(searchTerm)
+            const contentMatch = snippet.content.toLowerCase().includes(searchTerm)
+            return titleMatch || contentMatch
+        })
+    }
+
+    /**
      * Computed property: Whether valid snippets are available for display
      * Controls conditional UI rendering between empty state and normal snippet list.
      * 
-     * @returns {boolean} True if snippets array contains at least one valid snippet
+     * @returns {boolean} True if filtered snippets array contains at least one valid snippet
      */
-    property bool hasValidSnippets: snippets.length > 0
+    property bool hasValidSnippets: filteredSnippets.length > 0
     
     // Performance measurement (external counters to avoid binding loops)
     property int displayCalculationCount: 0

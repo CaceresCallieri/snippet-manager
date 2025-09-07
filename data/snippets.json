@@ -1,7 +1,7 @@
 [
 	{
 		"title": "Update CLAUDE.md file",
-		"content": "Update the CLAUDE.md file only with relevant information that could be useful for future developmet, try to keep it brief, avoid date logging."
+		"content": "Update the CLAUDE.md file only if needed, with relevant information that could be useful for future developmet, try to keep it brief, avoid date logging."
 	},
 	{
 		"title": "Commit progress",
