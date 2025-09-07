@@ -301,9 +301,27 @@ PanelWindow {
             anchors.right: parent.right
             anchors.margins: Constants.headerMargins
             height: Constants.headerHeight
-            text: window.hasSnippetsToDisplay ? 
-                  "Snippet Manager (" + (navigationController.globalIndex + 1) + " of " + sourceSnippets.length + " snippets)" :
-                  "Snippet Manager"
+            text: {
+                if (sourceSnippets.length === 0) {
+                    return "Snippet Manager"
+                } else if (searchInput?.text && searchInput.text.length > 0) {
+                    const matchCount = displayedSnippets.length
+                    const totalCount = sourceSnippets.length
+                    if (matchCount === 0) {
+                        return `No matches for "${searchInput.text}"`
+                    } else if (matchCount === totalCount) {
+                        const currentPos = navigationController.globalIndex + 1
+                        return `Snippet Manager • ${currentPos}/${totalCount} selected`
+                    } else {
+                        const currentPos = navigationController.globalIndex + 1
+                        return `Showing ${matchCount} of ${totalCount} snippets • ${currentPos}/${matchCount} selected`
+                    }
+                } else {
+                    const totalCount = sourceSnippets.length
+                    const currentPos = navigationController.globalIndex + 1
+                    return `Snippet Manager • ${currentPos}/${totalCount} selected`
+                }
+            }
             color: "#ffffff"
             font.pixelSize: Constants.headerFontSize
             font.bold: true
@@ -374,6 +392,9 @@ PanelWindow {
             EmptyStateView {
                 anchors.fill: parent
                 visible: !window.hasSnippetsToDisplay
+                searchTerm: searchInput?.text || ""
+                isSearchActive: (searchInput?.text || "").length > 0
+                totalSnippets: sourceSnippets.length
             }
             
             // Normal snippet list
