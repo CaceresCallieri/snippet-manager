@@ -686,12 +686,30 @@ property var filteredSnippets: {
 - Existing `onSnippetsChanged` handler automatically resets navigation when filter changes
 - Empty state logic updated to use `filteredSnippets.length > 0`
 
+### Keyboard Navigation from Search Field
+**QuickShell Launcher Pattern**: Search field maintains focus while delegating arrow keys to NavigationController
+- Up/Down arrows in search TextField delegate directly to `navigationController.moveUp()` and `navigationController.moveDown()`
+- Progressive Escape behavior: first Escape clears search, second Escape exits overlay
+- Enter key triggers snippet selection using existing validation chain
+- Legacy keyHandler disabled to prevent focus conflicts
+
+**Implementation Pattern**:
+```qml
+Keys.onUpPressed: function(event) {
+    event.accepted = true
+    if (window.hasValidSnippets) {
+        navigationController.moveUp()
+    }
+}
+```
+
 ### Architecture for Future Phases
-**Phase 1**: Basic search TextField with real-time filtering ✅
+**Phase 1**: Basic search TextField with real-time filtering and keyboard navigation ✅
 **Phase 2**: Enhanced visual feedback and highlighting
 **Phase 3**: Advanced features (prefix modes, fuzzy search)
 
-**Integration Points**:
+**Key Design Patterns**:
+- Search field as single point of keyboard input (QuickShell launcher pattern)
+- NavigationController provides public API for external control
 - Reactive property binding enables instant filtering on keystroke
-- NavigationController handles model changes transparently
-- Maintains existing snippet selection and injection workflow
+- Progressive UI feedback (clear search → exit overlay)

@@ -228,9 +228,33 @@ PanelWindow {
             selectionColor: Constants.search.selectionColor
             selectedTextColor: Constants.search.selectedTextColor
             
+            Keys.onUpPressed: function(event) {
+                event.accepted = true
+                if (window.hasValidSnippets) {
+                    window.debugLog("⬆️ Up arrow delegated from search field to NavigationController")
+                    navigationController.moveUp()
+                }
+            }
+            
+            Keys.onDownPressed: function(event) {
+                event.accepted = true
+                if (window.hasValidSnippets) {
+                    window.debugLog("⬇️ Down arrow delegated from search field to NavigationController")
+                    navigationController.moveDown()
+                }
+            }
+            
             Keys.onEscapePressed: function(event) {
                 event.accepted = true
-                Qt.quit()
+                if (searchInput.text.length > 0) {
+                    // First escape clears search
+                    window.debugLog("🧹 Escape pressed - clearing search text")
+                    searchInput.text = ""
+                } else {
+                    // Second escape (or escape with empty search) exits
+                    window.debugLog("🔴 Escape pressed - dismissing overlay")
+                    Qt.quit()
+                }
             }
             
             Keys.onReturnPressed: function(event) {
@@ -340,7 +364,7 @@ PanelWindow {
             anchors.margins: Constants.mainMargins
             height: Constants.instructionsHeight
             text: window.hasValidSnippets ? 
-                  "↑↓ Navigate • Enter Select • Esc Cancel" : 
+                  "↑↓ Navigate • Enter Select • Esc Clear/Cancel" : 
                   "Esc Cancel • Add snippets to data/snippets.json"
             color: "#aaaaaa"
             font.pixelSize: Constants.instructionsFontSize
@@ -348,76 +372,13 @@ PanelWindow {
             verticalAlignment: Text.AlignVCenter
         }
         
-        Item {
-            id: keyHandler
-            anchors.fill: parent
-            focus: true
-            
-            onFocusChanged: window.debugLog("🎯 keyHandler focus changed: " + focus)
-            onActiveFocusChanged: window.debugLog("🎯 keyHandler activeFocus changed: " + activeFocus)
-            
-            Keys.onPressed: function(event) {
-                // Handle escape key regardless of snippet state
-                if (event.key === Qt.Key_Escape) {
-                    window.debugLog("🔴 Escape pressed - dismissing overlay")
-                    if (window.hasValidSnippets) {
-                        window.showPerformanceSummary()
-                    }
-                    window.dismissed()
-                    event.accepted = true
-                    return
-                }
-                
-                // Only process navigation keys when we have valid snippets
-                if (!window.hasValidSnippets) {
-                    window.debugLog("🚫 Navigation disabled - no valid snippets available")
-                    return
-                }
-                
-                window.debugLog("🔵 Key pressed: " + event.key + " Global index: " + navigationController.globalIndex + " Window: " + navigationController.visibleRangeStartIndex + "-" + (navigationController.visibleRangeStartIndex + navigationController.visibleSnippetWindow.length - 1) + " Total: " + snippets.length)
-                switch (event.key) {
-                case Qt.Key_Up:
-                    navigationController.moveUp()
-                    event.accepted = true
-                    break
-                case Qt.Key_Down:
-                    navigationController.moveDown()
-                    event.accepted = true
-                    break
-                case Qt.Key_Return:
-                case Qt.Key_Enter:
-                    window.debugLog("🟢 Enter pressed - selecting snippet at global index: " + navigationController.globalIndex)
-                    
-                    // Capture atomic snapshot to prevent race conditions
-                    const currentSnippets = snippets
-                    const currentIndex = navigationController.globalIndex
-                    
-                    // Validate bounds with snapshot
-                    if (currentIndex >= 0 && currentIndex < currentSnippets.length) {
-                        const selectedSnippet = currentSnippets[currentIndex]
-                        
-                        // Double-check snippet exists (additional safety)
-                        if (selectedSnippet) {
-                            window.debugLog("✅ Selecting snippet: " + selectedSnippet.title)
-                            
-                            // Use validation function for consistency
-                            if (!window.validateAndSelectSnippet(selectedSnippet, "keyboard_enter")) {
-                                window.debugLog("❌ Keyboard selection validation failed for index: " + currentIndex)
-                            }
-                        } else {
-                            window.debugLog("❌ Snippet at index " + currentIndex + " is null or undefined")
-                        }
-                    } else {
-                        window.debugLog("❌ Invalid global index for selection: " + currentIndex + " (bounds: 0-" + (currentSnippets.length - 1) + ")")
-                    }
-                    event.accepted = true
-                    break
-                default:
-                    window.debugLog("🔸 Unhandled key: " + event.key)
-                    break
-                }
-            }
-        }
+        // Legacy keyHandler - replaced by searchInput keyboard navigation
+        // All keyboard navigation now handled by TextField using QuickShell launcher pattern
+        // Item {
+        //     id: keyHandler
+        //     anchors.fill: parent
+        //     focus: false  // Disabled - searchInput maintains focus
+        // }
     }
     
     Component.onCompleted: {
