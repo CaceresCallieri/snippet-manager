@@ -123,6 +123,11 @@ The codebase follows consistent, self-documenting naming patterns:
 - `visibleSnippetWindow` - Currently visible snippet array subset
 - `globalIndex` - Absolute position across all snippets (visibleRangeStartIndex + currentIndex)
 
+**Search & Data Flow Properties (Source/Display Pattern)**:
+- `sourceSnippets` - Original unfiltered snippet data from JSON file
+- `displayedSnippets` - Currently shown snippets after search filtering
+- `hasSnippetsToDisplay` - Boolean indicating if filtered results are available
+
 **State Management Properties**:
 - `isOverlayVisible` - Boolean overlay visibility state
 - `isDebugLoggingEnabled` - Debug logging toggle state

@@ -256,7 +256,7 @@ ShellRoot {
         active: root.isOverlayVisible
         
         UI.OverlayWindow {
-            snippets: root.loadedValidSnippets
+            sourceSnippets: root.loadedValidSnippets
             isDebugLoggingEnabled: root.isDebugLoggingEnabled
             
             // Pass notification function for UI error handling

@@ -7,7 +7,7 @@ import "../utils"
 PanelWindow {
     id: window
     
-    property var snippets: []
+    property var sourceSnippets: []
     property bool isDebugLoggingEnabled: false
     property var notifyUser: null
     
@@ -17,7 +17,7 @@ PanelWindow {
      */
     NavigationController {
         id: navigationController
-        snippets: window.filteredSnippets
+        snippets: window.displayedSnippets
         isDebugLoggingEnabled: window.isDebugLoggingEnabled
         
         onSelectionChanged: {
@@ -30,13 +30,13 @@ PanelWindow {
      * Real-time filtered snippets based on search input
      * Filters both title and content fields with case-insensitive matching
      * 
-     * @returns {Array} Filtered array of snippets matching search term
+     * @returns {Array} Currently displayed snippets after search filtering
      */
-    property var filteredSnippets: {
+    property var displayedSnippets: {
         const searchTerm = (searchInput?.text || "").toLowerCase()
-        if (!searchTerm) return snippets
+        if (!searchTerm) return sourceSnippets
         
-        return snippets.filter(snippet => 
+        return sourceSnippets.filter(snippet => 
             snippet.title.toLowerCase().includes(searchTerm) ||
             snippet.content.toLowerCase().includes(searchTerm)
         )
@@ -46,9 +46,9 @@ PanelWindow {
      * Computed property: Whether valid snippets are available for display
      * Controls conditional UI rendering between empty state and normal snippet list.
      * 
-     * @returns {boolean} True if filtered snippets array contains at least one valid snippet
+     * @returns {boolean} True if displayed snippets array contains at least one valid snippet
      */
-    property bool hasValidSnippets: filteredSnippets.length > 0
+    property bool hasSnippetsToDisplay: displayedSnippets.length > 0
     
     // Performance measurement (external counters to avoid binding loops)
     property int displayCalculationCount: 0
@@ -164,7 +164,7 @@ PanelWindow {
      */
     function handleEnterKey(event) {
         event.accepted = true
-        if (window.hasValidSnippets && navigationController.visibleSnippetWindow.length > 0) {
+        if (window.hasSnippetsToDisplay && navigationController.visibleSnippetWindow.length > 0) {
             const selectedSnippet = navigationController.visibleSnippetWindow[navigationController.currentIndex]
             if (selectedSnippet) {
                 window.debugLog("⌨️ Enter key pressed - selecting snippet: " + selectedSnippet.title)
@@ -223,7 +223,7 @@ PanelWindow {
      */
     function handleUpArrow(event) {
         event.accepted = true
-        if (window.hasValidSnippets) {
+        if (window.hasSnippetsToDisplay) {
             window.debugLog("⬆️ Up arrow delegated from search field to NavigationController")
             navigationController.moveUp()
         }
@@ -247,7 +247,7 @@ PanelWindow {
      */
     function handleDownArrow(event) {
         event.accepted = true
-        if (window.hasValidSnippets) {
+        if (window.hasSnippetsToDisplay) {
             window.debugLog("⬇️ Down arrow delegated from search field to NavigationController")
             navigationController.moveDown()
         }
@@ -301,8 +301,8 @@ PanelWindow {
             anchors.right: parent.right
             anchors.margins: Constants.headerMargins
             height: Constants.headerHeight
-            text: window.hasValidSnippets ? 
-                  "Snippet Manager (" + (navigationController.globalIndex + 1) + " of " + snippets.length + " snippets)" :
+            text: window.hasSnippetsToDisplay ? 
+                  "Snippet Manager (" + (navigationController.globalIndex + 1) + " of " + sourceSnippets.length + " snippets)" :
                   "Snippet Manager"
             color: "#ffffff"
             font.pixelSize: Constants.headerFontSize
@@ -373,14 +373,14 @@ PanelWindow {
             // Empty state UI
             EmptyStateView {
                 anchors.fill: parent
-                visible: !window.hasValidSnippets
+                visible: !window.hasSnippetsToDisplay
             }
             
             // Normal snippet list
             Column {
                 id: snippetColumn
                 anchors.fill: parent
-                visible: window.hasValidSnippets
+                visible: window.hasSnippetsToDisplay
                 spacing: Constants.itemSpacing
                 
                 Repeater {
@@ -439,7 +439,7 @@ PanelWindow {
             anchors.right: parent.right
             anchors.margins: Constants.mainMargins
             height: Constants.instructionsHeight
-            text: window.hasValidSnippets ? 
+            text: window.hasSnippetsToDisplay ? 
                   "↑↓ Navigate • Enter Select • Esc Clear/Cancel" : 
                   "Esc Cancel • Add snippets to data/snippets.json"
             color: "#aaaaaa"
@@ -458,7 +458,7 @@ PanelWindow {
     }
     
     Component.onCompleted: {
-        console.log("OverlayWindow: Created with", snippets.length, "snippets")
+        console.log("OverlayWindow: Created with", sourceSnippets.length, "snippets")
         window.debugLog("🎯 Focus management delegated to HyprlandFocusGrab")
     }
 }
