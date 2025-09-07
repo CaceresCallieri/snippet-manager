@@ -33,16 +33,13 @@ PanelWindow {
      * @returns {Array} Filtered array of snippets matching search term
      */
     property var filteredSnippets: {
-        if (!searchInput || !searchInput.text || searchInput.text.length === 0) {
-            return snippets
-        }
+        const searchTerm = (searchInput?.text || "").toLowerCase()
+        if (!searchTerm) return snippets
         
-        const searchTerm = searchInput.text.toLowerCase()
-        return snippets.filter(snippet => {
-            const titleMatch = snippet.title.toLowerCase().includes(searchTerm)
-            const contentMatch = snippet.content.toLowerCase().includes(searchTerm)
-            return titleMatch || contentMatch
-        })
+        return snippets.filter(snippet => 
+            snippet.title.toLowerCase().includes(searchTerm) ||
+            snippet.content.toLowerCase().includes(searchTerm)
+        )
     }
 
     /**
@@ -147,6 +144,35 @@ PanelWindow {
         window.debugLog("✅ Snippet validation passed from " + source + ": " + snippet.title)
         window.snippetSelected(snippet)
         return true
+    }
+    
+    /**
+     * Handles Enter key press events for snippet selection
+     * Unified handler for both Return and Enter key events
+     * 
+     * @param {Object} event - Keyboard event object
+     * 
+     * Functionality:
+     * - Validates snippet availability and navigation state
+     * - Retrieves currently selected snippet from NavigationController
+     * - Performs snippet validation and selection via validateAndSelectSnippet
+     * 
+     * Side effects:
+     * - Accepts keyboard event to prevent propagation
+     * - Logs selection attempt and validation results
+     * - Triggers snippet selection if validation passes
+     */
+    function handleEnterKey(event) {
+        event.accepted = true
+        if (window.hasValidSnippets && navigationController.visibleSnippetWindow.length > 0) {
+            const selectedSnippet = navigationController.visibleSnippetWindow[navigationController.currentIndex]
+            if (selectedSnippet) {
+                window.debugLog("⌨️ Enter key pressed - selecting snippet: " + selectedSnippet.title)
+                if (!window.validateAndSelectSnippet(selectedSnippet, "enter_key")) {
+                    window.debugLog("❌ Enter key validation failed")
+                }
+            }
+        }
     }
     
     
@@ -257,31 +283,8 @@ PanelWindow {
                 }
             }
             
-            Keys.onReturnPressed: function(event) {
-                event.accepted = true
-                if (window.hasValidSnippets && navigationController.visibleSnippetWindow.length > 0) {
-                    const selectedSnippet = navigationController.visibleSnippetWindow[navigationController.currentIndex]
-                    if (selectedSnippet) {
-                        window.debugLog("⌨️ Enter key pressed - selecting snippet: " + selectedSnippet.title)
-                        if (!window.validateAndSelectSnippet(selectedSnippet, "enter_key")) {
-                            window.debugLog("❌ Enter key validation failed")
-                        }
-                    }
-                }
-            }
-            
-            Keys.onEnterPressed: function(event) {
-                event.accepted = true
-                if (window.hasValidSnippets && navigationController.visibleSnippetWindow.length > 0) {
-                    const selectedSnippet = navigationController.visibleSnippetWindow[navigationController.currentIndex]
-                    if (selectedSnippet) {
-                        window.debugLog("⌨️ Enter key pressed - selecting snippet: " + selectedSnippet.title)
-                        if (!window.validateAndSelectSnippet(selectedSnippet, "enter_key")) {
-                            window.debugLog("❌ Enter key validation failed")
-                        }
-                    }
-                }
-            }
+            Keys.onReturnPressed: function(event) { handleEnterKey(event) }
+            Keys.onEnterPressed: function(event) { handleEnterKey(event) }
         }
         
         // Main content area with conditional rendering
