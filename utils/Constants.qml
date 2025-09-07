@@ -43,5 +43,7 @@ QtObject {
         readonly property color selectedTextColor: "#ffffff"
         readonly property int borderWidth: 1
         readonly property int borderRadius: 4
+        readonly property int maxInputLength: 100
+        readonly property color warningColor: "#ff6b35"
     }
 }

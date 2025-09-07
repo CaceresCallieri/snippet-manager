@@ -175,6 +175,84 @@ PanelWindow {
         }
     }
     
+    /**
+     * Handles progressive Escape key behavior: clear search then exit overlay
+     * First press clears search text, second press (or empty search) exits
+     * 
+     * @param {Object} event - Keyboard event object
+     * 
+     * Functionality:
+     * - Progressive behavior: first escape clears search, second escape exits
+     * - Immediate exit if search field is already empty
+     * - Proper event handling to prevent propagation
+     * 
+     * Side effects:
+     * - Accepts keyboard event to prevent propagation
+     * - Clears searchInput.text on first press when text exists
+     * - Calls Qt.quit() to exit overlay on second press or when search empty
+     * - Logs user actions with appropriate emoji markers
+     */
+    function handleEscapeKey(event) {
+        event.accepted = true
+        if (searchInput.text.length > 0) {
+            // First escape clears search
+            window.debugLog("🧹 Escape pressed - clearing search text")
+            searchInput.text = ""
+        } else {
+            // Second escape (or escape with empty search) exits
+            window.debugLog("🔴 Escape pressed - dismissing overlay")
+            Qt.quit()
+        }
+    }
+    
+    /**
+     * Delegates up arrow navigation to NavigationController while maintaining search focus
+     * Enables navigation without losing search field focus
+     * 
+     * @param {Object} event - Keyboard event object
+     * 
+     * Functionality:
+     * - Validates snippet availability before navigation
+     * - Delegates navigation to NavigationController.moveUp()
+     * - Maintains search field focus throughout navigation
+     * 
+     * Side effects:
+     * - Accepts keyboard event to prevent propagation
+     * - Calls navigationController.moveUp() if valid snippets available
+     * - Logs navigation delegation with directional emoji
+     */
+    function handleUpArrow(event) {
+        event.accepted = true
+        if (window.hasValidSnippets) {
+            window.debugLog("⬆️ Up arrow delegated from search field to NavigationController")
+            navigationController.moveUp()
+        }
+    }
+    
+    /**
+     * Delegates down arrow navigation to NavigationController while maintaining search focus
+     * Enables navigation without losing search field focus
+     * 
+     * @param {Object} event - Keyboard event object
+     * 
+     * Functionality:
+     * - Validates snippet availability before navigation
+     * - Delegates navigation to NavigationController.moveDown()
+     * - Maintains search field focus throughout navigation
+     * 
+     * Side effects:
+     * - Accepts keyboard event to prevent propagation
+     * - Calls navigationController.moveDown() if valid snippets available
+     * - Logs navigation delegation with directional emoji
+     */
+    function handleDownArrow(event) {
+        event.accepted = true
+        if (window.hasValidSnippets) {
+            window.debugLog("⬇️ Down arrow delegated from search field to NavigationController")
+            navigationController.moveDown()
+        }
+    }
+    
     
     anchors.top: true
     margins.top: screen.height * Constants.overlayTopOffsetFraction
@@ -247,6 +325,11 @@ PanelWindow {
             font.pixelSize: Constants.search.fontSize
             focus: true
             
+            // Input validation: prevent input beyond maximum length
+            validator: RegularExpressionValidator {
+                regularExpression: new RegExp("^.{0," + Constants.search.maxInputLength + "}$")
+            }
+            
             background: Rectangle {
                 color: Constants.search.backgroundColor
                 border.color: Constants.search.borderColor
@@ -258,37 +341,23 @@ PanelWindow {
             selectionColor: Constants.search.selectionColor
             selectedTextColor: Constants.search.selectedTextColor
             
-            Keys.onUpPressed: function(event) {
-                event.accepted = true
-                if (window.hasValidSnippets) {
-                    window.debugLog("⬆️ Up arrow delegated from search field to NavigationController")
-                    navigationController.moveUp()
-                }
-            }
-            
-            Keys.onDownPressed: function(event) {
-                event.accepted = true
-                if (window.hasValidSnippets) {
-                    window.debugLog("⬇️ Down arrow delegated from search field to NavigationController")
-                    navigationController.moveDown()
-                }
-            }
-            
-            Keys.onEscapePressed: function(event) {
-                event.accepted = true
-                if (searchInput.text.length > 0) {
-                    // First escape clears search
-                    window.debugLog("🧹 Escape pressed - clearing search text")
-                    searchInput.text = ""
-                } else {
-                    // Second escape (or escape with empty search) exits
-                    window.debugLog("🔴 Escape pressed - dismissing overlay")
-                    Qt.quit()
-                }
-            }
+            Keys.onUpPressed: function(event) { handleUpArrow(event) }
+            Keys.onDownPressed: function(event) { handleDownArrow(event) }
+            Keys.onEscapePressed: function(event) { handleEscapeKey(event) }
             
             Keys.onReturnPressed: function(event) { handleEnterKey(event) }
             Keys.onEnterPressed: function(event) { handleEnterKey(event) }
+            
+            // Character count indicator for long searches
+            Text {
+                visible: parent.text.length > 50
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: 2
+                text: parent.text.length + "/" + Constants.search.maxInputLength
+                font.pixelSize: 8
+                color: parent.text.length >= Constants.search.maxInputLength ? Constants.search.warningColor : "#aaaaaa"
+            }
         }
         
         // Main content area with conditional rendering
