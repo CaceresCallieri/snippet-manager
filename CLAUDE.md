@@ -13,7 +13,7 @@ A modular snippet manager for Arch Linux Hyprland systems built with QuickShell.
 - **Frontend**: QuickShell + QML for Wayland layer overlay
 - **Backend**: JavaScript services with Qt integration
 - **Storage**: JSON files in user config directory
-- **System Integration**: wtype for text injection, hyprctl for cursor positioning
+- **System Integration**: Hyprland native clipboard system, wl-clipboard tools
 
 ## Development Phases
 
@@ -25,7 +25,7 @@ A modular snippet manager for Arch Linux Hyprland systems built with QuickShell.
 - ✅ Keyboard navigation (Up/Down arrows, Enter to select)
 - ✅ Mouse navigation (hover to select, click to choose)
 - ✅ Embedded static snippet data (5 test snippets)
-- ✅ Text injection via wtype with proper error handling
+- ✅ Text injection via Hyprland native clipboard system with proper error handling
 - ✅ Cursor positioning within injected text using `[cursor]` markers
 - ✅ Auto-exit after selection or dismissal (Escape key)
 - ✅ High-visibility UI with orange borders and clear numbering
@@ -45,7 +45,7 @@ quickshell-snippet-manager/
 │   └── HyprlandService.qml     # (Simplified in shell.qml)
 ├── data/
 │   └── snippets.json           # ✅ Active JSON data source for snippets
-├── inject-text.sh              # ✅ Detached text injection script with cursor positioning
+├── inject-text.sh              # ✅ Hyprland-native text injection script with application detection
 └── test_injection.sh           # ✅ Testing utility
 ```
 
@@ -360,16 +360,16 @@ Up scroll:   Window [2,3,4,5,6] cursor at 0 → Global index 2 (reverse)
 
 ## Text Injection Implementation
 
-### Critical Breakthrough: execDetached Syntax
-The key to making text injection work was discovering the correct syntax for `Quickshell.execDetached()`. After extensive debugging, it was found that the function requires both a command array and working directory parameter, similar to `DesktopAction.command`.
+### Hyprland Native Clipboard System
+The text injection system uses Hyprland's native clipboard and key dispatch capabilities for optimal performance and reliability.
 
-**Working Implementation:**
+**Core Implementation:**
 ```javascript
 onSnippetSelected: function(snippet) {
     console.log("📋 Selected snippet:", snippet.title)
     root.debugLog("🚀 Launching detached script with text argument...")
     
-    // CRITICAL: Use command array + working directory (like DesktopAction.command)
+    // Use command array + working directory for Quickshell.execDetached()
     var command = ["/home/jc/Dev/snippet-manager/inject-text.sh", snippet.content]
     Quickshell.execDetached(command, "/home/jc/Dev/snippet-manager")
     
@@ -378,34 +378,36 @@ onSnippetSelected: function(snippet) {
 }
 ```
 
-### Detached Script Architecture
-**File**: `inject-text.sh` (Hardened against command injection)
+### Hyprland-Native Script Architecture
+**File**: `inject-text.sh` - Uses Hyprland's native clipboard and key dispatch system
+
+**Key Features:**
+1. **Application Detection**: Automatically detects terminal vs GUI applications
+2. **Smart Paste Shortcuts**: Uses `Ctrl+Shift+V` for terminals, `Ctrl+V` for other apps
+3. **Clipboard Backup/Restore**: Minimizes clipboard pollution through quick backup/restore cycle
+4. **Instant Injection**: Leverages `hyprctl dispatch sendshortcut` for native paste operations
+
+**Application Detection Logic:**
 ```bash
-#!/bin/bash
-# Detached text injection script for QuickShell snippet manager
-# This script runs independently after QuickShell exits to avoid interference
+# Detect active window class using Hyprland
+active_window_class=$(hyprctl activewindow -j | grep '"class":' | cut -d'"' -f4)
 
-text="$1"
-
-# Validate input length to prevent resource exhaustion attacks
-if [[ ${#text} -gt 10000 ]]; then
-    echo "Error: Text too long (max 10KB)" >&2
-    exit 1
+if [[ "$active_window_class" == "com.mitchellh.ghostty" ]]; then
+    paste_shortcut="CTRL+SHIFT,V,"  # Terminal paste
+else
+    paste_shortcut="CTRL,V,"        # Standard paste
 fi
 
-# Allow QuickShell to exit completely and focus to stabilize
-sleep 0.25
-
-# Use printf with stdin for secure text injection (prevents argument parsing exploits)
-# -s flag adds milliseconds delay between key events to prevent issues
-printf '%s' "$text" | wtype -s 5 -
+# Execute instant paste via Hyprland dispatcher
+hyprctl dispatch sendshortcut "$paste_shortcut"
 ```
 
-### Security Hardening (P1 Critical Fix)
-1. **Input validation**: 10KB length limit prevents resource exhaustion attacks
-2. **Safe text handling**: `printf '%s' | wtype -` prevents argument parsing exploits
-3. **Command injection prevention**: Stdin approach eliminates shell command execution risks
-4. **Defense in depth**: Multiple layers protect against malicious snippet content
+### Security & Performance Benefits
+1. **No dependency on external text injection tools** - Uses native Hyprland capabilities
+2. **Instant bulk injection** - Much faster than character-by-character typing
+3. **Input validation**: 10KB length limit prevents resource exhaustion attacks
+4. **Clipboard pollution minimization** - Quick backup/restore cycle
+5. **Application-aware pasting** - Automatically uses correct paste shortcut
 
 ### Input Validation System (P1 Critical Security)
 Comprehensive validation in `shell.qml` prevents crashes and security issues from malformed snippets:
@@ -430,56 +432,29 @@ Comprehensive validation in `shell.qml` prevents crashes and security issues fro
 - Ensures consistent security boundaries between QML and shell script layers
 - Eliminates type confusion attacks (non-string content causing injection failures)
 
-### Why This Approach Works
-1. **Detached execution**: Script runs independently after QuickShell exits
-2. **Proper timing**: 0.25s delay allows focus to stabilize
-3. **Reliable injection**: wtype with 5ms delays prevents key event issues
-4. **Clean architecture**: Separates UI from system interaction
-5. **Security first**: Hardened against command injection and DoS attacks
-
-### Timeout Protection (P4 Enhancement)
-**Script-level timeout handling** prevents hanging wtype processes:
-
-```bash
-# 5-second timeout with fallback for systems without timeout command
-timeout_seconds=5
-if command -v timeout >/dev/null 2>&1; then
-    timeout ${timeout_seconds} wtype -s 5 - < <(printf '%s' "$text")
-    exit_code=$?
-    
-    if [ $exit_code -eq 124 ]; then
-        # Timeout occurred - notify user via desktop notification
-        notify-send -u critical "Snippet Manager" "Text injection timed out"
-        exit 1
-    fi
-else
-    # Graceful fallback when timeout unavailable
-    printf '%s' "$text" | wtype -s 5 -
-fi
-```
+### Dependencies
+- **wl-copy/wl-paste**: Wayland clipboard utilities
+- **hyprctl**: Hyprland compositor control tool
+- **timeout**: Command timeout utility (standard on most systems)
 
 **Benefits**: Prevents infinite hangs, provides user feedback, maintains system stability with bounded execution time.
 
-### Cursor Positioning Enhancement
-**Feature**: Enhanced text injection with intelligent cursor positioning using `[cursor]` markers.
+### Cursor Positioning Support
+**Feature**: Intelligent cursor positioning using `[cursor]` markers within snippet content.
 
-**Implementation**: The inject-text.sh script now supports cursor positioning within injected text:
+**Implementation**: After text injection, cursor is positioned using Hyprland key dispatch:
 
 ```bash
-# Enhanced cursor positioning support
+# Parse cursor marker and calculate positioning
 if [[ "$text" == *"[cursor]"* ]]; then
-    # Split text at cursor marker
     prefix="${text%%\[cursor\]*}"     # Text before marker
-    suffix="${text##*\[cursor\]}"     # Text after marker
+    suffix="${text##*\[cursor\]}"     # Text after marker  
     cursor_offset=${#suffix}          # Characters to move back
-    clean_text="${prefix}${suffix}"   # Text without marker
+    clean_text="${prefix}${suffix}"   # Remove marker from text
     
-    # Inject text then position cursor
-    printf '%s' "$clean_text" | wtype -s 5 -
-    
-    # Position cursor using Left arrow keys
+    # After text injection, position cursor using Hyprland dispatcher
     for ((i=0; i<cursor_offset; i++)); do
-        wtype -k Left >/dev/null 2>&1 || break
+        hyprctl dispatch sendshortcut "Left" || break
     done
 fi
 ```
@@ -491,34 +466,16 @@ fi
     "content": "function myFunction() {\n    [cursor]\n    return true;\n}"
 },
 {
-    "title": "If Statement Template", 
-    "content": "if ([cursor]) {\n    // TODO: implement logic\n}"
-},
-{
-    "title": "Email Template",
+    "title": "Email Template", 
     "content": "Hi [cursor],\n\nBest regards,\nYour Name"
 }
 ```
 
-**Technical Benefits**:
-- **Robust**: Full text injection first, then positioning (content never lost)
-- **Simple**: Single `[cursor]` marker syntax, uses existing wtype tool
-- **Backward Compatible**: Existing snippets without markers work unchanged
-- **Error Handling**: Graceful fallback if positioning fails, with detailed logging
-- **Performance**: Bounded cursor movement with timeout protection
-
-**Positioning Algorithm**:
-1. **Detection**: Check for `[cursor]` marker in snippet content
-2. **Parsing**: Split text into prefix (before marker) and suffix (after marker)
-3. **Injection**: Insert clean text (prefix + suffix) via wtype
-4. **Positioning**: Move cursor left by suffix length using `wtype -k Left`
-5. **Validation**: Break loop on positioning failure to prevent hangs
-
 ### Technical Notes
-- **execDetached documentation**: Found in QuickShell DesktopAction docs showing command array + working directory pattern
-- **Hyprland integration**: Works reliably with Hyprland keybind execution
-- **Process isolation**: Detached script avoids interference from QuickShell process lifecycle
-- **Timeout protection**: 5-second bound prevents hanging processes with desktop notifications for failures
+- **execDetached syntax**: Use command array + working directory pattern from QuickShell DesktopAction docs
+- **Hyprland integration**: Native clipboard and key dispatch system provides optimal performance
+- **Process isolation**: Detached script runs independently after QuickShell exits
+- **Timeout protection**: Bounded execution prevents hanging with desktop error notifications
 
 ## Focus Management & Cursor Configuration
 
