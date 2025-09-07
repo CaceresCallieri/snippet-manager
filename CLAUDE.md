@@ -626,3 +626,50 @@ function notifyUser(title, message, urgency = "normal") {
 - **Low**: Empty snippets with user guidance, informational messages
 
 **Benefits**: Transforms silent failures into clear user feedback, eliminates confusion when snippet manager appears empty, improves troubleshooting without checking console logs.
+
+## Search Feature Implementation
+
+### Search TextField Foundation
+Basic search functionality implemented with QuickShell TextField component:
+
+**Core Implementation**:
+- Search input positioned between header and snippet list
+- Focus management integrated with HyprlandFocusGrab system
+- Keyboard handling: Escape closes overlay, Enter selects current snippet
+- Styled to match existing UI theme with Constants.search configuration
+
+**Focus Management Pattern**:
+```qml
+// HyprlandFocusGrab coordination with search input
+onActiveChanged: {
+    if (active) {
+        Qt.callLater(function() {
+            searchInput.forceActiveFocus()
+        })
+    }
+}
+```
+
+**Key Events Handling**:
+```qml
+Keys.onEscapePressed: function(event) {
+    event.accepted = true
+    Qt.quit()
+}
+
+Keys.onReturnPressed: function(event) {
+    // Select currently highlighted snippet
+    const selectedSnippet = navigationController.visibleSnippetWindow[navigationController.currentIndex]
+    validateAndSelectSnippet(selectedSnippet, "enter_key")
+}
+```
+
+### Architecture for Future Phases
+**Phase 1**: Basic search TextField with keyboard navigation ✅
+**Phase 2**: Real-time filtering with visual feedback
+**Phase 3**: Advanced features (prefix modes, fuzzy search)
+
+**Integration Points**:
+- TextField delegates keyboard navigation to NavigationController
+- Maintains existing snippet selection and injection workflow
+- Uses Constants.search for styling consistency

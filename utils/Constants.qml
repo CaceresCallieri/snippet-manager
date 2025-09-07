@@ -31,4 +31,17 @@ QtObject {
     readonly property int headerFontSize: 18
     readonly property int snippetFontSize: 14
     readonly property int instructionsFontSize: 12
+    
+    // Search Input Styling
+    readonly property QtObject search: QtObject {
+        readonly property int inputHeight: 35
+        readonly property int fontSize: 14
+        readonly property color backgroundColor: "#2a2a2a"
+        readonly property color borderColor: "#555555"
+        readonly property color textColor: "#ffffff"
+        readonly property color selectionColor: "#ff6b35"
+        readonly property color selectedTextColor: "#ffffff"
+        readonly property int borderWidth: 1
+        readonly property int borderRadius: 4
+    }
 }

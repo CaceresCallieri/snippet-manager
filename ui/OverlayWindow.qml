@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Hyprland
 import "../utils"
@@ -145,10 +146,10 @@ PanelWindow {
         
         onActiveChanged: {
             if (active) {
-                // HyprlandFocusGrab is ready - now coordinate Qt focus
+                // HyprlandFocusGrab is ready - now coordinate Qt focus with search input
                 Qt.callLater(function() {
-                    keyHandler.forceActiveFocus()
-                    window.debugLog("🎯 Focus coordinated with HyprlandFocusGrab")
+                    searchInput.forceActiveFocus()
+                    window.debugLog("🎯 Focus coordinated with HyprlandFocusGrab - search input focused")
                 })
             }
         }
@@ -183,15 +184,72 @@ PanelWindow {
             verticalAlignment: Text.AlignVCenter
         }
         
+        // Search input field
+        TextField {
+            id: searchInput
+            anchors.top: header.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: Constants.mainMargins
+            anchors.topMargin: Constants.headerTopMargin
+            height: Constants.search.inputHeight
+            
+            placeholderText: "Search snippets..."
+            font.pixelSize: Constants.search.fontSize
+            focus: true
+            
+            background: Rectangle {
+                color: Constants.search.backgroundColor
+                border.color: Constants.search.borderColor
+                border.width: Constants.search.borderWidth
+                radius: Constants.search.borderRadius
+            }
+            
+            color: Constants.search.textColor
+            selectionColor: Constants.search.selectionColor
+            selectedTextColor: Constants.search.selectedTextColor
+            
+            Keys.onEscapePressed: function(event) {
+                event.accepted = true
+                Qt.quit()
+            }
+            
+            Keys.onReturnPressed: function(event) {
+                event.accepted = true
+                if (window.hasValidSnippets && navigationController.visibleSnippetWindow.length > 0) {
+                    const selectedSnippet = navigationController.visibleSnippetWindow[navigationController.currentIndex]
+                    if (selectedSnippet) {
+                        window.debugLog("⌨️ Enter key pressed - selecting snippet: " + selectedSnippet.title)
+                        if (!window.validateAndSelectSnippet(selectedSnippet, "enter_key")) {
+                            window.debugLog("❌ Enter key validation failed")
+                        }
+                    }
+                }
+            }
+            
+            Keys.onEnterPressed: function(event) {
+                event.accepted = true
+                if (window.hasValidSnippets && navigationController.visibleSnippetWindow.length > 0) {
+                    const selectedSnippet = navigationController.visibleSnippetWindow[navigationController.currentIndex]
+                    if (selectedSnippet) {
+                        window.debugLog("⌨️ Enter key pressed - selecting snippet: " + selectedSnippet.title)
+                        if (!window.validateAndSelectSnippet(selectedSnippet, "enter_key")) {
+                            window.debugLog("❌ Enter key validation failed")
+                        }
+                    }
+                }
+            }
+        }
+        
         // Main content area with conditional rendering
         Item {
             id: contentArea
-            anchors.top: header.bottom
+            anchors.top: searchInput.bottom
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: instructions.top
             anchors.margins: Constants.mainMargins
-            anchors.topMargin: Constants.headerTopMargin
+            anchors.topMargin: Constants.itemSpacing
             
             // Empty state UI
             EmptyStateView {
