@@ -193,8 +193,12 @@ PanelWindow {
             if (active) {
                 // HyprlandFocusGrab is ready - now coordinate Qt focus with search input
                 Qt.callLater(function() {
-                    searchInput.forceActiveFocus()
-                    window.debugLog("🎯 Focus coordinated with HyprlandFocusGrab - search input focused")
+                    if (searchInput && window.visible) {
+                        searchInput.forceActiveFocus()
+                        window.debugLog("🎯 Focus coordinated with HyprlandFocusGrab - search input focused")
+                    } else {
+                        window.debugLog("⚠️ Focus coordination skipped - overlay no longer active")
+                    }
                 })
             }
         }
