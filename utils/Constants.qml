@@ -31,6 +31,7 @@ QtObject {
     readonly property int headerFontSize: 18
     readonly property int snippetFontSize: 14
     readonly property int instructionsFontSize: 12
+    readonly property int snippetTitleFontSize: 14
     
     // Search Input Styling
     readonly property QtObject search: QtObject {
@@ -47,6 +48,7 @@ QtObject {
         readonly property color warningColor: "#ff6b35"
         readonly property color noResultsColor: "#888888"
         readonly property int feedbackFontSize: 12
-        readonly property color matchHighlightColor: "#ff6b35"
+        readonly property color matchHighlightColor: "#00ff00"
+        readonly property color matchHighlightTextColor: "#00ff00"
     }
 }

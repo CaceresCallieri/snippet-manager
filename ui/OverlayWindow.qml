@@ -253,6 +253,35 @@ PanelWindow {
         }
     }
     
+    /**
+     * Highlights search term matches in text using HTML span tags with colored background
+     * Provides visual emphasis for search matches in snippet titles and content.
+     * 
+     * @param {string} text - Original text to highlight matches in
+     * @param {string} searchTerm - Search term to highlight (case-insensitive matching)
+     * @returns {string} HTML-formatted text with highlighted search matches
+     * 
+     * Technical details:
+     * - Escapes regex special characters in search term for safe pattern matching
+     * - Case-insensitive highlighting matches search behavior
+     * - Uses HTML span tags with CSS styling for visual highlighting
+     * - Returns original text unchanged if no search term provided
+     * 
+     * Side effects:
+     * - No side effects - pure text transformation function
+     * - Safe for use in property bindings and computed text properties
+     */
+    function highlightSearchTerm(text, searchTerm) {
+        if (!searchTerm || searchTerm.length === 0) {
+            return text
+        }
+        
+        const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const regex = new RegExp(`(${escapedTerm})`, 'gi')
+        
+        return text.replace(regex, `<span style="color: ${Constants.search.matchHighlightTextColor};">$1</span>`)
+    }
+    
     
     anchors.top: true
     margins.top: screen.height * Constants.overlayTopOffsetFraction
@@ -415,14 +444,16 @@ PanelWindow {
                         border.width: Constants.borderWidth
                         radius: Constants.itemBorderRadius
                         
+                        // Title with highlighting
                         Text {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.margins: Constants.textMargins
-                            text: modelData.title || "Untitled"
+                            text: window.highlightSearchTerm(modelData.title || "Untitled", searchInput?.text || "")
+                            textFormat: Text.RichText  // Enable HTML formatting
                             color: index === navigationController.currentIndex ? "#ffffff" : "#cccccc"
-                            font.pixelSize: Constants.snippetFontSize
+                            font.pixelSize: Constants.snippetTitleFontSize
                             font.bold: false
                             elide: Text.ElideRight
                         }
