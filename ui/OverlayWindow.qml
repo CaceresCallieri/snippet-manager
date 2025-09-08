@@ -407,6 +407,17 @@ PanelWindow {
     implicitHeight: Constants.overlayHeight
     color: "transparent"
     
+    /**
+     * Helper function for desktop notifications using notify-send
+     * @param {string} title - Notification title
+     * @param {string} message - Notification message  
+     * @param {string} urgency - Notification urgency level ("low", "normal", "critical")
+     */
+    function notifyUser(title, message, urgency = "normal") {
+        const command = ["notify-send", "-u", urgency, title, message]
+        Quickshell.execDetached(command)
+    }
+
     // Configure as Wayland layer shell overlay with exclusive keyboard focus
     // This prevents system shortcuts (like super+p) from dismissing the overlay
     Component.onCompleted: {
@@ -417,9 +428,23 @@ PanelWindow {
             window.WlrLayershell.layer = WlrLayer.Overlay      // Above all windows, including fullscreen
             window.WlrLayershell.keyboardFocus = WlrKeyboardFocus.Exclusive  // Prevent system shortcuts
             window.WlrLayershell.namespace = "snippet-manager"  // Identifier for external tools
-            window.debugLog("🔧 WlrLayershell configured: Overlay layer with exclusive keyboard focus")
+            
+            // Verify focus acquisition worked (compositor may not grant exclusive focus)
+            Qt.callLater(function() {
+                if (window.WlrLayershell.keyboardFocus === WlrKeyboardFocus.Exclusive) {
+                    window.debugLog("🔧 WlrLayershell configured successfully with exclusive keyboard focus")
+                } else {
+                    window.debugLog("❌ Exclusive keyboard focus acquisition failed - compositor may not support it")
+                    notifyUser("Snippet Manager Warning", 
+                              "Keyboard shortcuts may not work properly - compositor doesn't support exclusive focus", 
+                              "normal")
+                }
+            })
         } else {
             window.debugLog("⚠️ WlrLayershell not available - exclusive focus may not work")
+            notifyUser("Snippet Manager", 
+                      "Running in compatibility mode - some shortcuts may dismiss overlay", 
+                      "low")
         }
         
         // Ensure search input gets focus once window is ready

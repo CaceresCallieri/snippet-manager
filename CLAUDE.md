@@ -342,6 +342,16 @@ Component.onCompleted: {
         window.WlrLayershell.layer = WlrLayer.Overlay
         window.WlrLayershell.keyboardFocus = WlrKeyboardFocus.Exclusive
         window.WlrLayershell.namespace = "snippet-manager"
+        
+        // Verify focus acquisition (compositor may not support exclusive focus)
+        Qt.callLater(function() {
+            if (window.WlrLayershell.keyboardFocus === WlrKeyboardFocus.Exclusive) {
+                window.debugLog("🔧 WlrLayershell configured successfully with exclusive keyboard focus")
+            } else {
+                // Desktop notification warns user of potential keyboard issues
+                notifyUser("Snippet Manager Warning", "Keyboard shortcuts may not work properly", "normal")
+            }
+        })
     }
 }
 ```
