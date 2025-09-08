@@ -729,9 +729,29 @@ Text {
 }
 ```
 
+### Security Implementation
+**HTML Injection Prevention**: Critical security measures implemented for Text.RichText contexts:
+- `escapeHtml()` function sanitizes all user content before HTML generation
+- `highlightSearchTerm()` includes comprehensive input validation and error handling
+- All snippet titles and search terms are HTML-escaped to prevent XSS attacks
+- Graceful error recovery prevents crashes from malformed inputs
+
+**Security Functions** (ui/OverlayWindow.qml):
+```javascript
+function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;')
+}
+```
+
+**IMPORTANT**: Always use `escapeHtml()` before displaying user content in Text.RichText contexts to prevent HTML injection vulnerabilities.
+
 ### Architecture for Future Phases
 **Phase 1**: Basic search TextField with real-time filtering, keyboard navigation, and input validation ✅
-**Phase 2**: Enhanced visual feedback and highlighting
+**Phase 2**: Enhanced visual feedback and highlighting with HTML injection security ✅
 **Phase 3**: Advanced features (prefix modes, fuzzy search)
 
 **Key Design Patterns**:
@@ -740,3 +760,4 @@ Text {
 - Reactive property binding enables instant filtering on keystroke
 - Progressive UI feedback (clear search → exit overlay)
 - User-friendly input validation with visual feedback
+- HTML escaping for all user content in RichText contexts
