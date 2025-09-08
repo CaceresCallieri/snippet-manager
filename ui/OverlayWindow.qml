@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Wayland
 import "../utils"
 
 PanelWindow {
@@ -398,38 +399,40 @@ PanelWindow {
     }
     
     
-    anchors.top: true
+    // Position overlay at cursor location (no anchoring needed for overlay layer)
     margins.top: screen.height * Constants.overlayTopOffsetFraction
-    exclusiveZone: 0
     
     implicitWidth: Constants.overlayWidth
     implicitHeight: Constants.overlayHeight
     color: "transparent"
     
-    HyprlandFocusGrab {
-        id: focusGrab
-        windows: [window]
-        active: true
+    // Configure as Wayland layer shell overlay with exclusive keyboard focus
+    // This prevents system shortcuts (like super+p) from dismissing the overlay
+    Component.onCompleted: {
+        console.log("OverlayWindow: Created with", sourceSnippets.length, "snippets")
         
-        onActiveChanged: {
-            if (active) {
-                // HyprlandFocusGrab is ready - now coordinate Qt focus with search input
-                Qt.callLater(function() {
-                    if (searchInput && window.visible) {
-                        searchInput.forceActiveFocus()
-                        window.debugLog("🎯 Focus coordinated with HyprlandFocusGrab - search input focused")
-                    } else {
-                        window.debugLog("⚠️ Focus coordination skipped - overlay no longer active")
-                    }
-                })
+        // Configure Wayland layer shell for persistent focus
+        if (window.WlrLayershell != null) {
+            window.WlrLayershell.layer = WlrLayer.Overlay      // Above all windows, including fullscreen
+            window.WlrLayershell.keyboardFocus = WlrKeyboardFocus.Exclusive  // Prevent system shortcuts
+            window.WlrLayershell.namespace = "snippet-manager"  // Identifier for external tools
+            window.debugLog("🔧 WlrLayershell configured: Overlay layer with exclusive keyboard focus")
+        } else {
+            window.debugLog("⚠️ WlrLayershell not available - exclusive focus may not work")
+        }
+        
+        // Ensure search input gets focus once window is ready
+        Qt.callLater(function() {
+            if (searchInput && window.visible) {
+                searchInput.forceActiveFocus()
+                window.debugLog("🎯 Search input focused with WlrLayershell exclusive keyboard mode")
             }
-        }
-        
-        onCleared: {
-            window.debugLog("🔴 Focus grab cleared - dismissing overlay")
-            window.dismissed()
-        }
+        })
     }
+    
+    // Focus management now handled by WlrLayershell.keyboardFocus = KeyboardFocus.Exclusive
+    // This provides stronger focus control than HyprlandFocusGrab and prevents system shortcuts
+    // from interrupting the overlay (like super+p for screenshots)
     
     Rectangle {
         anchors.fill: parent
@@ -604,8 +607,4 @@ PanelWindow {
         // }
     }
     
-    Component.onCompleted: {
-        console.log("OverlayWindow: Created with", sourceSnippets.length, "snippets")
-        window.debugLog("🎯 Focus management delegated to HyprlandFocusGrab")
-    }
 }

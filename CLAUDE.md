@@ -325,19 +325,32 @@ onDisplayedSnippetsChanged: trackCalculation()
 - Maintains all debug tracking functionality
 - Follows QML best practices for computed properties
 
-### Focus Management: Race Condition Fix
-**Issue**: Multiple simultaneous focus operations caused race conditions between Qt focus system and HyprlandFocusGrab.
+### Focus Management: WlrLayershell Persistent Focus Implementation
+**Issue**: System shortcuts (like `super+p` for screenshots) were dismissing the overlay before they could execute, due to HyprlandFocusGrab being cleared by compositor events.
 
-**Solution**:
-- Coordinated focus management using `HyprlandFocusGrab.onActiveChanged` handler
-- Eliminated competing focus operations in Component.onCompleted
-- Single, reliable focus establishment pathway
+**Solution**: Replaced HyprlandFocusGrab with Wayland layer shell exclusive keyboard focus:
+- **WlrLayershell Configuration**: `window.WlrLayershell.layer = WlrLayer.Overlay` positions above all windows including fullscreen
+- **Exclusive Keyboard Focus**: `window.WlrLayershell.keyboardFocus = WlrKeyboardFocus.Exclusive` prevents system shortcuts from interrupting
+- **Window Namespace**: `window.WlrLayershell.namespace = "snippet-manager"` for external tool identification
+
+**Implementation**:
+```qml
+import Quickshell.Wayland
+
+Component.onCompleted: {
+    if (window.WlrLayershell != null) {
+        window.WlrLayershell.layer = WlrLayer.Overlay
+        window.WlrLayershell.keyboardFocus = WlrKeyboardFocus.Exclusive
+        window.WlrLayershell.namespace = "snippet-manager"
+    }
+}
+```
 
 **Benefits**:
-- Consistent keyboard input capture on every overlay show
-- No focus conflicts between Qt and Hyprland systems  
-- Better Wayland integration using native Hyprland focus management
-- Cleaner, more maintainable focus code
+- **Screenshot compatibility**: `super+p` and other system shortcuts work without dismissing overlay
+- **Stronger focus control**: Native Wayland layer shell exclusive mode more reliable than compositor-specific focus grabs
+- **Better architecture**: Eliminates complex HyprlandFocusGrab coordination logic
+- **Cross-compositor compatibility**: Works with any Wayland compositor supporting layer shell protocol
 
 ### Navigation Patterns (8 snippets, 5 displayed):
 ```
