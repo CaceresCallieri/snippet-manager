@@ -254,32 +254,95 @@ PanelWindow {
     }
     
     /**
-     * Highlights search term matches in text using HTML span tags with colored background
-     * Provides visual emphasis for search matches in snippet titles and content.
+     * Escapes HTML special characters to prevent XSS injection in RichText contexts
+     * Essential security function for safely displaying user content with HTML formatting.
      * 
-     * @param {string} text - Original text to highlight matches in
-     * @param {string} searchTerm - Search term to highlight (case-insensitive matching)
-     * @returns {string} HTML-formatted text with highlighted search matches
+     * @param {string} text - Text content to escape for HTML safety
+     * @returns {string} HTML-escaped text safe for RichText rendering
      * 
-     * Technical details:
-     * - Escapes regex special characters in search term for safe pattern matching
-     * - Case-insensitive highlighting matches search behavior
-     * - Uses HTML span tags with CSS styling for visual highlighting
-     * - Returns original text unchanged if no search term provided
+     * Security considerations:
+     * - Prevents XSS attacks through malicious snippet titles
+     * - Required before any HTML generation in Text.RichText contexts
+     * - Escapes all dangerous HTML characters (&, <, >, ", ')
      * 
      * Side effects:
      * - No side effects - pure text transformation function
-     * - Safe for use in property bindings and computed text properties
+     * - Safe for use in property bindings and computed properties
+     */
+    function escapeHtml(text) {
+        return text.replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/'/g, '&#39;')
+    }
+    
+    /**
+     * Highlights search term matches in text using HTML span tags with colored text
+     * Provides visual emphasis for search matches with comprehensive security and error handling.
+     * 
+     * @param {string} text - Original text to highlight matches in (will be HTML-escaped)
+     * @param {string} searchTerm - Search term to highlight (case-insensitive matching)
+     * @returns {string} HTML-formatted text with highlighted search matches, safely escaped
+     * 
+     * Security features:
+     * - HTML-escapes all user content to prevent XSS injection
+     * - Validates input types and existence before processing
+     * - Handles malformed regex patterns gracefully
+     * 
+     * Technical details:
+     * - Escapes both original text AND search term for HTML safety
+     * - Case-insensitive highlighting matches search behavior
+     * - Uses HTML span tags with CSS styling for visual highlighting
+     * - Comprehensive error handling with graceful fallbacks
+     * 
+     * Side effects:
+     * - Logs errors to console for debugging without crashing UI
+     * - Always returns safely escaped text even on errors
      */
     function highlightSearchTerm(text, searchTerm) {
-        if (!searchTerm || searchTerm.length === 0) {
-            return text
+        try {
+            // Input validation for security and stability
+            if (!text || typeof text !== 'string') {
+                window.debugLog("⚠️ Highlighting: Invalid text input")
+                return ""
+            }
+            
+            if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.length === 0) {
+                return escapeHtml(text)
+            }
+            
+            // HTML-escape both text and search term for security
+            const escapedText = escapeHtml(text)
+            const escapedTerm = escapeHtml(searchTerm)
+            
+            // Regex escaping with error handling
+            let regexPattern
+            try {
+                regexPattern = escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            } catch (error) {
+                window.debugLog("⚠️ Highlighting: Regex escaping failed - " + error.message)
+                return escapedText
+            }
+            
+            if (regexPattern.length === 0) {
+                return escapedText
+            }
+            
+            // Regex compilation and replacement with error handling
+            try {
+                const regex = new RegExp(`(${regexPattern})`, 'gi')
+                return escapedText.replace(regex, `<span style="color: ${Constants.search.matchHighlightTextColor};">$1</span>`)
+            } catch (error) {
+                window.debugLog("⚠️ Highlighting: Regex compilation failed - " + error.message)
+                return escapedText
+            }
+            
+        } catch (error) {
+            console.warn("❌ Highlighting function failed:", error.message)
+            // Ultimate fallback - return safely escaped text or empty string
+            return (text && typeof text === 'string') ? escapeHtml(text) : ""
         }
-        
-        const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        const regex = new RegExp(`(${escapedTerm})`, 'gi')
-        
-        return text.replace(regex, `<span style="color: ${Constants.search.matchHighlightTextColor};">$1</span>`)
     }
     
     
