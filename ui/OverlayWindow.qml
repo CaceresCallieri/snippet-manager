@@ -34,12 +34,30 @@ PanelWindow {
      */
     property var displayedSnippets: {
         const searchTerm = (searchInput?.text || "").toLowerCase()
-        if (!searchTerm) return sourceSnippets
+        const searchText = searchInput?.text || ""
         
+        if (!searchTerm) {
+            // No search term - return all snippets with escaped titles (no highlighting)
+            return sourceSnippets.map(snippet => {
+                return {
+                    title: snippet.title,
+                    content: snippet.content,
+                    highlightedTitle: escapeHtml(snippet.title)
+                }
+            })
+        }
+        
+        // Filter and highlight in one pass for optimal performance
         return sourceSnippets.filter(snippet => 
             snippet.title.toLowerCase().includes(searchTerm) ||
             snippet.content.toLowerCase().includes(searchTerm)
-        )
+        ).map(snippet => {
+            return {
+                title: snippet.title,
+                content: snippet.content,
+                highlightedTitle: highlightSearchTerm(snippet.title, searchText)
+            }
+        })
     }
 
     /**
@@ -70,6 +88,40 @@ PanelWindow {
         if (isDebugLoggingEnabled) {
             console.log(message)
         }
+    }
+    
+    /**
+     * Generates appropriate header text based on current search and navigation state
+     * Handles empty state, active search, and normal navigation scenarios
+     * 
+     * @returns {string} Formatted header text with context indicators
+     * 
+     * Side effects:
+     * - No side effects - pure text computation function
+     * - Safe for use in property bindings
+     */
+    function getHeaderText() {
+        if (sourceSnippets.length === 0) {
+            return "Snippet Manager"
+        }
+        
+        const searchActive = searchInput?.text?.length > 0
+        const matchCount = displayedSnippets.length  
+        const totalCount = sourceSnippets.length
+        const currentPos = navigationController.globalIndex + 1
+        
+        // Handle search with no results
+        if (searchActive && matchCount === 0) {
+            return `No matches for "${searchInput.text}"`
+        }
+        
+        // Handle filtered search results
+        if (searchActive && matchCount < totalCount) {
+            return `Showing ${matchCount} of ${totalCount} snippets • ${currentPos}/${matchCount} selected`
+        }
+        
+        // Handle normal navigation (no search or showing all results)
+        return `Snippet Manager • ${currentPos}/${totalCount} selected`
     }
     
     /**
@@ -393,27 +445,7 @@ PanelWindow {
             anchors.right: parent.right
             anchors.margins: Constants.headerMargins
             height: Constants.headerHeight
-            text: {
-                if (sourceSnippets.length === 0) {
-                    return "Snippet Manager"
-                } else if (searchInput?.text && searchInput.text.length > 0) {
-                    const matchCount = displayedSnippets.length
-                    const totalCount = sourceSnippets.length
-                    if (matchCount === 0) {
-                        return `No matches for "${searchInput.text}"`
-                    } else if (matchCount === totalCount) {
-                        const currentPos = navigationController.globalIndex + 1
-                        return `Snippet Manager • ${currentPos}/${totalCount} selected`
-                    } else {
-                        const currentPos = navigationController.globalIndex + 1
-                        return `Showing ${matchCount} of ${totalCount} snippets • ${currentPos}/${matchCount} selected`
-                    }
-                } else {
-                    const totalCount = sourceSnippets.length
-                    const currentPos = navigationController.globalIndex + 1
-                    return `Snippet Manager • ${currentPos}/${totalCount} selected`
-                }
-            }
+            text: getHeaderText()
             color: "#ffffff"
             font.pixelSize: Constants.headerFontSize
             font.bold: true
@@ -513,7 +545,7 @@ PanelWindow {
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.margins: Constants.textMargins
-                            text: window.highlightSearchTerm(modelData.title || "Untitled", searchInput?.text || "")
+                            text: modelData.highlightedTitle || "Untitled"
                             textFormat: Text.RichText  // Enable HTML formatting
                             color: index === navigationController.currentIndex ? "#ffffff" : "#cccccc"
                             font.pixelSize: Constants.snippetTitleFontSize
