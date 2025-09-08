@@ -399,7 +399,8 @@ PanelWindow {
     }
     
     
-    // Position overlay at cursor location (no anchoring needed for overlay layer)
+    // Position overlay at fixed screen percentage (1/6 from top)
+    // Note: Cursor positioning not currently implemented for overlay layer
     margins.top: screen.height * Constants.overlayTopOffsetFraction
     
     implicitWidth: Constants.overlayWidth
