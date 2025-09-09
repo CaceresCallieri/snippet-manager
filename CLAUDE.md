@@ -325,48 +325,18 @@ onDisplayedSnippetsChanged: trackCalculation()
 - Maintains all debug tracking functionality
 - Follows QML best practices for computed properties
 
-### Focus Management: WlrLayershell Persistent Focus Implementation
-**Issue**: System shortcuts (like `super+p` for screenshots) were dismissing the overlay before they could execute, due to HyprlandFocusGrab being cleared by compositor events.
+### Persistent Focus with WlrLayershell
 
-**Solution**: Replaced HyprlandFocusGrab with Wayland layer shell exclusive keyboard focus:
-- **WlrLayershell Configuration**: `window.WlrLayershell.layer = WlrLayer.Overlay` positions above all windows including fullscreen
-- **Exclusive Keyboard Focus**: `window.WlrLayershell.keyboardFocus = WlrKeyboardFocus.Exclusive` prevents system shortcuts from interrupting
-- **Window Namespace**: `window.WlrLayershell.namespace = "snippet-manager"` for external tool identification
+Replaced HyprlandFocusGrab with Wayland layer shell exclusive keyboard focus to prevent system shortcuts from dismissing the overlay.
 
-**Implementation**:
-```qml
-import Quickshell.Wayland
+**Key Configuration**:
+- `WlrLayer.Overlay` - positions above all windows including fullscreen
+- `WlrKeyboardFocus.Exclusive` - prevents system shortcut interruption  
+- `namespace: "snippet-manager"` - external tool identifier
 
-Component.onCompleted: {
-    if (window.WlrLayershell != null) {
-        window.WlrLayershell.layer = WlrLayer.Overlay
-        window.WlrLayershell.keyboardFocus = WlrKeyboardFocus.Exclusive
-        window.WlrLayershell.namespace = "snippet-manager"
-        
-        // Verify focus acquisition (compositor may not support exclusive focus)
-        Qt.callLater(function() {
-            if (window.WlrLayershell.keyboardFocus === WlrKeyboardFocus.Exclusive) {
-                window.debugLog("🔧 WlrLayershell configured successfully with exclusive keyboard focus")
-            } else {
-                // Desktop notification warns user of potential keyboard issues
-                notifyUser("Snippet Manager Warning", "Keyboard shortcuts may not work properly", "normal")
-            }
-        })
-    }
-}
-```
+**Focus Protection**: Timer-based acquisition with 3 retry attempts and desktop notifications for failures.
 
-**Benefits**:
-- **Screenshot compatibility**: `super+p` and other system shortcuts work without dismissing overlay
-- **Stronger focus control**: Native Wayland layer shell exclusive mode more reliable than compositor-specific focus grabs
-- **Better architecture**: Eliminates complex HyprlandFocusGrab coordination logic
-- **Cross-compositor compatibility**: Works with any Wayland compositor supporting layer shell protocol
-
-**Focus Timeout Protection**: Timer-based focus acquisition with retry mechanism ensures search input receives focus even if initial attempts fail:
-- **500ms timeout per attempt** with up to 3 retry attempts
-- **Focus state verification** using `searchInput.activeFocus` property
-- **Desktop notifications** for persistent focus failures via `notifyUser()` function
-- **Comprehensive debug logging** for all focus acquisition attempts and outcomes
+**Result**: Screenshots (super+p) and other shortcuts work without closing overlay.
 
 ### Navigation Patterns (8 snippets, 5 displayed):
 ```
