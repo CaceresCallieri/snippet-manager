@@ -5,7 +5,7 @@ QtObject {
     // UI Layout
     readonly property int maxVisibleSnippets: 5
     readonly property int overlayWidth: 350
-    readonly property int overlayHeight: 320
+    readonly property int overlayHeight: 350
     readonly property int snippetItemHeight: 35
     readonly property real overlayTopOffsetFraction: 1.0 / 6.0
     
@@ -15,7 +15,9 @@ QtObject {
     readonly property int headerTopMargin: 10
     readonly property int itemSpacing: 5
     readonly property int textMargins: 15
-    readonly property int headerHeight: 40
+    readonly property int headerHeight: 45
+    readonly property int titleHeight: 25
+    readonly property int countHeight: 15
     readonly property int instructionsHeight: 25
     
     // Text Injection Timing (milliseconds)
@@ -28,7 +30,9 @@ QtObject {
     readonly property int borderWidth: 1
     
     // Font Sizes
-    readonly property int headerFontSize: 18
+    readonly property int headerFontSize: 16
+    readonly property int titleFontSize: 16
+    readonly property int countFontSize: 11
     readonly property int snippetFontSize: 14
     readonly property int instructionsFontSize: 12
     readonly property int snippetTitleFontSize: 14

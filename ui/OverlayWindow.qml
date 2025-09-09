@@ -92,18 +92,32 @@ PanelWindow {
     }
     
     /**
-     * Generates appropriate header text based on current search and navigation state
-     * Handles empty state, active search, and normal navigation scenarios
+     * Generates title text for the header - always "Snippet Manager"
+     * Simplified from previous complex header text generation
      * 
-     * @returns {string} Formatted header text with context indicators
+     * @returns {string} Title text for header component
      * 
      * Side effects:
      * - No side effects - pure text computation function
      * - Safe for use in property bindings
      */
-    function getHeaderText() {
+    function getTitleText() {
+        return "Snippet Manager"
+    }
+    
+    /**
+     * Generates count text based on current search and navigation state
+     * Handles empty state, active search, and normal navigation scenarios
+     * 
+     * @returns {string} Count text with current position and total info
+     * 
+     * Side effects:
+     * - No side effects - pure text computation function  
+     * - Safe for use in property bindings
+     */
+    function getCountText() {
         if (sourceSnippets.length === 0) {
-            return "Snippet Manager"
+            return "No snippets available"
         }
         
         const searchActive = searchInput?.text?.length > 0
@@ -118,11 +132,11 @@ PanelWindow {
         
         // Handle filtered search results
         if (searchActive && matchCount < totalCount) {
-            return `Showing ${matchCount} of ${totalCount} snippets • ${currentPos}/${matchCount} selected`
+            return `${currentPos}/${matchCount} • ${matchCount} of ${totalCount} total`
         }
         
         // Handle normal navigation (no search or showing all results)
-        return `Snippet Manager • ${currentPos}/${totalCount} selected`
+        return `${currentPos}/${totalCount}`
     }
     
     /**
@@ -606,19 +620,41 @@ PanelWindow {
         border.width: Constants.borderWidth
         radius: Constants.borderRadius
         
-        Text {
+        // Header with title and count components stacked vertically
+        Column {
             id: header
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: Constants.headerMargins
             height: Constants.headerHeight
-            text: getHeaderText()
-            color: "#ffffff"
-            font.pixelSize: Constants.headerFontSize
-            font.bold: true
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
+            
+            // Title component
+            Text {
+                id: titleText
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: Constants.titleHeight
+                text: getTitleText()
+                color: "#ffffff"
+                font.pixelSize: Constants.titleFontSize
+                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+            
+            // Count component
+            Text {
+                id: countText
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: Constants.countHeight
+                text: getCountText()
+                color: "#cccccc"
+                font.pixelSize: Constants.countFontSize
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
         }
         
         // Search input field
@@ -628,11 +664,14 @@ PanelWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: Constants.mainMargins
-            anchors.topMargin: Constants.headerTopMargin
+            anchors.topMargin: Constants.itemSpacing
             height: Constants.search.inputHeight
             
             placeholderText: "Search snippets..."
+            placeholderTextColor: "#898989"
             font.pixelSize: Constants.search.fontSize
+            leftPadding: Constants.textMargins
+            rightPadding: Constants.textMargins
             focus: true
             
             // Input validation: prevent input beyond maximum length
