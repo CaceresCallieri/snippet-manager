@@ -362,6 +362,12 @@ Component.onCompleted: {
 - **Better architecture**: Eliminates complex HyprlandFocusGrab coordination logic
 - **Cross-compositor compatibility**: Works with any Wayland compositor supporting layer shell protocol
 
+**Focus Timeout Protection**: Timer-based focus acquisition with retry mechanism ensures search input receives focus even if initial attempts fail:
+- **500ms timeout per attempt** with up to 3 retry attempts
+- **Focus state verification** using `searchInput.activeFocus` property
+- **Desktop notifications** for persistent focus failures via `notifyUser()` function
+- **Comprehensive debug logging** for all focus acquisition attempts and outcomes
+
 ### Navigation Patterns (8 snippets, 5 displayed):
 ```
 Initial:     Window [0,1,2,3,4] cursor at 0 → Global index 0
