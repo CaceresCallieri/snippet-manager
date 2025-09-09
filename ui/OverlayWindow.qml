@@ -399,7 +399,7 @@ PanelWindow {
             // Regex compilation and replacement with error handling
             try {
                 const regex = new RegExp(`(${regexPattern})`, 'gi')
-                return escapedText.replace(regex, `<span style="color: ${Constants.search.matchHighlightTextColor};">$1</span>`)
+                return escapedText.replace(regex, `<span style="color: ${Constants.search.matchHighlightTextColor};">${escapedTerm}</span>`)
             } catch (error) {
                 window.debugLog("⚠️ Highlighting: Regex compilation failed - " + error.message)
                 return escapedText

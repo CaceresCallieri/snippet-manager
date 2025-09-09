@@ -533,6 +533,9 @@ For environments where `no_warps = true` is required or for more reliable focus 
 ### Script Error Handling
 The `inject-text.sh` script includes proper error handling with timeout protection and graceful exit behavior. Critical fix: replaced invalid `return` statement with `exit 1` on clipboard failures to prevent memory leaks from hanging processes.
 
+### Search Highlighting Security
+The search highlighting function includes XSS protection using HTML escaping. Critical fix: replaced `$1` backreference with escaped search term directly to prevent HTML injection through regex replacement in `ui/OverlayWindow.qml:402`.
+
 ### Desktop Notification Strategy
 For critical errors and warnings that users need to be aware of, implement desktop notifications using `notify-send`:
 
