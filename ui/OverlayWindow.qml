@@ -427,10 +427,6 @@ PanelWindow {
      * @param {string} message - Notification message  
      * @param {string} urgency - Notification urgency level ("low", "normal", "critical")
      */
-    function notifyUser(title, message, urgency = "normal") {
-        const command = ["notify-send", "-u", urgency, title, message]
-        Quickshell.execDetached(command)
-    }
 
     /**
      * Configures Wayland layer shell for persistent focus overlay
