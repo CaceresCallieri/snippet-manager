@@ -530,6 +530,9 @@ For environments where `no_warps = true` is required or for more reliable focus 
 
 ## Error Handling & User Notifications
 
+### Script Error Handling
+The `inject-text.sh` script includes proper error handling with timeout protection and graceful exit behavior. Critical fix: replaced invalid `return` statement with `exit 1` on clipboard failures to prevent memory leaks from hanging processes.
+
 ### Desktop Notification Strategy
 For critical errors and warnings that users need to be aware of, implement desktop notifications using `notify-send`:
 

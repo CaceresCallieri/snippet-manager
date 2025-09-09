@@ -49,7 +49,7 @@ if command -v wl-copy >/dev/null 2>&1 && command -v hyprctl >/dev/null 2>&1; the
     printf '%s' "$clean_text" | timeout 2 wl-copy 2>/dev/null || {
         echo "Warning: Failed to copy text to clipboard" >&2
         injection_success=false
-        return
+        exit 1
     }
     
     # Detect application type and use appropriate paste shortcut
