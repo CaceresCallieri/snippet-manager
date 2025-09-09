@@ -418,16 +418,32 @@ PanelWindow {
         Quickshell.execDetached(command)
     }
 
-    // Configure as Wayland layer shell overlay with exclusive keyboard focus
-    // This prevents system shortcuts (like super+p) from dismissing the overlay
-    Component.onCompleted: {
-        console.log("OverlayWindow: Created with", sourceSnippets.length, "snippets")
+    /**
+     * Configures Wayland layer shell for persistent focus overlay
+     * Sets up exclusive keyboard mode to prevent system shortcuts from dismissing overlay
+     * 
+     * @returns {boolean} True if configuration was successful, false otherwise
+     * 
+     * Side effects:
+     * - Sets WlrLayershell.layer to WlrLayer.Overlay
+     * - Sets WlrLayershell.keyboardFocus to WlrKeyboardFocus.Exclusive  
+     * - Sets WlrLayershell.namespace to "snippet-manager"
+     * - Logs configuration status and sends user notifications on errors
+     * - Verifies focus acquisition with Qt.callLater()
+     */
+    function configureLayerShell() {
+        if (!window.WlrLayershell) {
+            window.debugLog("⚠️ WlrLayershell not available - falling back to standard window mode")
+            notifyUser("Snippet Manager", 
+                      "Running in compatibility mode - some shortcuts may dismiss overlay", 
+                      "low")
+            return false
+        }
         
-        // Configure Wayland layer shell for persistent focus
-        if (window.WlrLayershell != null) {
-            window.WlrLayershell.layer = WlrLayer.Overlay      // Above all windows, including fullscreen
-            window.WlrLayershell.keyboardFocus = WlrKeyboardFocus.Exclusive  // Prevent system shortcuts
-            window.WlrLayershell.namespace = "snippet-manager"  // Identifier for external tools
+        try {
+            window.WlrLayershell.layer = WlrLayer.Overlay
+            window.WlrLayershell.keyboardFocus = WlrKeyboardFocus.Exclusive
+            window.WlrLayershell.namespace = "snippet-manager"
             
             // Verify focus acquisition worked (compositor may not grant exclusive focus)
             Qt.callLater(function() {
@@ -440,20 +456,42 @@ PanelWindow {
                               "normal")
                 }
             })
-        } else {
-            window.debugLog("⚠️ WlrLayershell not available - exclusive focus may not work")
-            notifyUser("Snippet Manager", 
-                      "Running in compatibility mode - some shortcuts may dismiss overlay", 
-                      "low")
+            
+            window.debugLog("🔧 WlrLayershell configuration initiated")
+            return true
+            
+        } catch (error) {
+            console.error("❌ WlrLayershell configuration failed:", error.message)
+            notifyUser("Snippet Manager Error", 
+                      "Focus configuration failed - overlay may not work properly", 
+                      "critical")
+            return false
         }
-        
-        // Ensure search input gets focus once window is ready
+    }
+
+    /**
+     * Ensures search input receives focus after window initialization
+     * Uses Qt.callLater to avoid race conditions with window setup
+     * 
+     * @param {boolean} layerShellSuccess - Whether layer shell configuration succeeded
+     */
+    function initializeFocus(layerShellSuccess) {
         Qt.callLater(function() {
             if (searchInput && window.visible) {
                 searchInput.forceActiveFocus()
-                window.debugLog("🎯 Search input focused with WlrLayershell exclusive keyboard mode")
+                const focusMode = layerShellSuccess ? "WlrLayershell exclusive" : "standard"
+                window.debugLog(`🎯 Search input focused with ${focusMode} keyboard mode`)
             }
         })
+    }
+
+    // Configure as Wayland layer shell overlay with exclusive keyboard focus
+    // This prevents system shortcuts (like super+p) from dismissing the overlay
+    Component.onCompleted: {
+        console.log("OverlayWindow: Created with", sourceSnippets.length, "snippets")
+        
+        const layerShellSuccess = configureLayerShell()
+        initializeFocus(layerShellSuccess)
     }
     
     // Focus management now handled by WlrLayershell.keyboardFocus = KeyboardFocus.Exclusive
