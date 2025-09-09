@@ -550,6 +550,51 @@ PanelWindow {
         initializeFocus(layerShellSuccess)
     }
     
+    /**
+     * Wayland layer shell protocol monitoring for external changes
+     * Detects compositor modifications to layer shell properties and notifies user
+     * 
+     * Monitors:
+     * - layer property changes (Overlay layer requirement)
+     * - keyboardFocus property changes (Exclusive focus requirement)
+     * - namespace property changes (snippet-manager identifier)
+     * 
+     * Side effects:
+     * - Logs all property changes with debug output
+     * - Sends desktop notifications for critical changes affecting functionality
+     * - No automatic recovery to avoid compositor conflicts
+     */
+    Connections {
+        target: window.WlrLayershell
+        enabled: window.WlrLayershell != null
+        
+        function onLayerChanged() {
+            window.debugLog(`⚠️ Layer shell layer changed externally: ${window.WlrLayershell.layer} (expected: ${WlrLayer.Overlay})`)
+            
+            if (window.WlrLayershell.layer !== WlrLayer.Overlay) {
+                notifyUser("Snippet Manager Warning", 
+                          "Window layer changed - overlay may not stay on top of other windows", 
+                          "normal")
+            }
+        }
+        
+        function onKeyboardFocusChanged() {
+            window.debugLog(`⚠️ Keyboard focus mode changed externally: ${window.WlrLayershell.keyboardFocus} (expected: ${WlrKeyboardFocus.Exclusive})`)
+            
+            if (window.WlrLayershell.keyboardFocus !== WlrKeyboardFocus.Exclusive) {
+                notifyUser("Snippet Manager Warning", 
+                          "Focus mode changed - system shortcuts may now dismiss overlay", 
+                          "normal")
+            }
+        }
+        
+        function onNamespaceChanged() {
+            if (window.WlrLayershell.namespace !== "snippet-manager") {
+                window.debugLog(`⚠️ Layer shell namespace changed externally: '${window.WlrLayershell.namespace}' (expected: 'snippet-manager')`)
+            }
+        }
+    }
+    
     // Focus management now handled by WlrLayershell.keyboardFocus = KeyboardFocus.Exclusive
     // This provides stronger focus control than HyprlandFocusGrab and prevents system shortcuts
     // from interrupting the overlay (like super+p for screenshots)

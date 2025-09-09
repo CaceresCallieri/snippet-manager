@@ -336,6 +336,8 @@ Replaced HyprlandFocusGrab with Wayland layer shell exclusive keyboard focus to 
 
 **Focus Protection**: Timer-based acquisition with 3 retry attempts and desktop notifications for failures.
 
+**Protocol Monitoring**: Connections object monitors WlrLayershell property changes and notifies user of external modifications affecting functionality.
+
 **Result**: Screenshots (super+p) and other shortcuts work without closing overlay.
 
 ### Navigation Patterns (8 snippets, 5 displayed):
