@@ -34,16 +34,7 @@ PanelWindow {
      * @returns {Array} All snippets matching current search term
      */
     readonly property var filteredSnippets: {
-        if (!searchInput || !searchInput.text || searchInput.text.length === 0) {
-            return sourceSnippets
-        }
-        
-        const searchTerm = searchInput.text.toLowerCase()
-        return sourceSnippets.filter(snippet => {
-            const titleMatch = snippet.title.toLowerCase().includes(searchTerm)
-            const contentMatch = snippet.content.toLowerCase().includes(searchTerm)
-            return titleMatch || contentMatch
-        })
+        return FuzzySearch.searchAndRank(sourceSnippets, searchInput?.text || "")
     }
     
     /**

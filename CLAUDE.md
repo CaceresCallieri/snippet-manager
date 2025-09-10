@@ -744,27 +744,23 @@ Keys.onReturnPressed: function(event) {
 }
 ```
 
-### Real-Time Filtering Implementation
-**Core Filtering Logic**:
+### Fuzzy Search Implementation ✅
+**Modular Architecture**: Implemented as `utils/FuzzySearch.qml` singleton for clean separation of concerns and reusability.
+
+**Core Integration**:
 ```qml
-property var filteredSnippets: {
-    if (!searchInput || !searchInput.text || searchInput.text.length === 0) {
-        return snippets
-    }
-    
-    const searchTerm = searchInput.text.toLowerCase()
-    return snippets.filter(snippet => {
-        const titleMatch = snippet.title.toLowerCase().includes(searchTerm)
-        const contentMatch = snippet.content.toLowerCase().includes(searchTerm)
-        return titleMatch || contentMatch
-    })
+readonly property var filteredSnippets: {
+    return FuzzySearch.searchAndRank(sourceSnippets, searchInput?.text || "")
 }
 ```
 
-**Navigation Integration**:
-- NavigationController uses `filteredSnippets` instead of raw `snippets` array
-- Existing `onSnippetsChanged` handler automatically resets navigation when filter changes
-- Empty state logic updated to use `filteredSnippets.length > 0`
+**Multi-Criteria Scoring Algorithm**:
+- **Position-based weighting**: Prefix matches (1000pts) > Word boundary (800pts) > Substring (400pts) > Fuzzy (200pts)
+- **Field importance**: Title matches weighted 3x higher than content matches
+- **Enhancement bonuses**: Capital letter matches, length normalization
+- **Typo tolerance**: Basic fuzzy matching with 70% character coverage threshold
+
+**Performance**: Optimized for real-time search with <100 snippets, ES5 compatible for QML JavaScript engine
 
 ### Keyboard Navigation from Search Field
 **QuickShell Launcher Pattern**: Search field maintains focus while delegating arrow keys to NavigationController
@@ -824,13 +820,16 @@ function escapeHtml(text) {
 
 **IMPORTANT**: Always use `escapeHtml()` before displaying user content in Text.RichText contexts to prevent HTML injection vulnerabilities.
 
-### Architecture for Future Phases
+### Search Feature Phases
 **Phase 1**: Basic search TextField with real-time filtering, keyboard navigation, and input validation ✅
 **Phase 2**: Enhanced visual feedback and highlighting with HTML injection security ✅
   - Performance optimized: Pre-computed highlighting during filtering eliminates render-time calculations
   - Code quality: Extracted complex header logic into `getHeaderText()` helper function with JSDoc documentation
   - Maintenance: Removed duplicate constants, comprehensive error handling in all highlighting operations
-**Phase 3**: Advanced features (prefix modes, fuzzy search)
+**Phase 3**: Fuzzy search with relevance-based ranking ✅
+  - **Problem solved**: "co" search now ranks "Commit progress" before "Update CLAUDE.md file"
+  - **Modular design**: `utils/FuzzySearch.qml` singleton for reusability and maintainability
+  - **Zero regressions**: Full backward compatibility with existing search functionality
 
 **Key Design Patterns**:
 - Search field as single point of keyboard input (QuickShell launcher pattern)
