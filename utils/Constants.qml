@@ -52,7 +52,7 @@ QtObject {
         readonly property color warningColor: "#ff6b35"
         readonly property color noResultsColor: "#888888"
         readonly property int feedbackFontSize: 12
-        readonly property color matchHighlightTextColor: "#00ff00"
+        readonly property color matchHighlightTextColor: "#98FB98"
         readonly property int characterCountThreshold: 50
         readonly property int smallTextFontSize: 8
         readonly property color characterCountColor: "#aaaaaa"
