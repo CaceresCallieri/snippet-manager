@@ -479,76 +479,29 @@ PanelWindow {
         }
     }
 
-    /**
-     * Timer-based focus acquisition with timeout protection and retry mechanism
-     * Ensures search input receives focus even if initial attempts fail
-     * 
-     * Features:
-     * - 500ms timeout per attempt
-     * - Up to 3 retry attempts
-     * - Focus state verification
-     * - User notification on persistent failures
-     */
-    Timer {
-        id: focusTimeout
-        interval: 500  // 500ms timeout per attempt
-        running: false
-        repeat: false
-        
-        property int attemptCount: 0
-        readonly property int maxAttempts: 3
-        property bool layerShellSuccess: false
-        
-        onTriggered: {
-            attemptCount++
-            
-            if (searchInput && searchInput.visible) {
-                searchInput.forceActiveFocus()
-                
-                // Verify focus was acquired after short delay
-                Qt.callLater(function() {
-                    if (searchInput.activeFocus) {
-                        const focusMode = layerShellSuccess ? "WlrLayershell exclusive" : "standard"
-                        window.debugLog(`🎯 Focus acquired on attempt ${attemptCount} with ${focusMode} keyboard mode`)
-                    } else if (attemptCount < maxAttempts) {
-                        window.debugLog(`⚠️ Focus attempt ${attemptCount} failed, retrying in ${interval}ms...`)
-                        focusTimeout.restart()
-                    } else {
-                        window.debugLog("❌ Focus acquisition failed after " + maxAttempts + " attempts")
-                        notifyUser("Snippet Manager Warning", 
-                                  "Keyboard input may not work properly - focus acquisition failed", 
-                                  "normal")
-                    }
-                })
-            } else {
-                window.debugLog("❌ Search input not available for focus (visible: " + (searchInput ? searchInput.visible : "null") + ")")
-                if (attemptCount < maxAttempts) {
-                    window.debugLog(`⚠️ Retrying focus attempt ${attemptCount + 1} in ${interval}ms...`)
-                    focusTimeout.restart()
-                }
-            }
-        }
-    }
 
     /**
-     * Initializes input focus with timeout protection and retry mechanism
-     * Replaces Qt.callLater with Timer-based approach for better reliability
+     * Initializes input focus with simple Qt approach
+     * Simplified from complex Timer-based retry mechanism for better maintainability
      * 
      * @param {boolean} layerShellSuccess - Whether layer shell configuration succeeded
      * 
      * Side effects:
-     * - Starts focusTimeout timer for protected focus acquisition
-     * - Resets attempt counter for fresh focus acquisition cycle
-     * - Logs initialization with focus mode information
+     * - Focuses search input using Qt.callLater for proper timing
+     * - Logs focus status for debugging
      */
     function initializeFocus(layerShellSuccess) {
         const focusMode = layerShellSuccess ? "WlrLayershell exclusive" : "standard"
-        window.debugLog(`🎯 Initializing focus acquisition with ${focusMode} keyboard mode`)
+        window.debugLog(`🎯 Initializing focus with ${focusMode} keyboard mode`)
         
-        // Start focus acquisition with timeout protection
-        focusTimeout.layerShellSuccess = layerShellSuccess
-        focusTimeout.attemptCount = 0
-        focusTimeout.start()
+        Qt.callLater(function() {
+            if (searchInput && searchInput.visible) {
+                searchInput.forceActiveFocus()
+                window.debugLog("🎯 Search input focused")
+            } else {
+                window.debugLog("⚠️ Search input not available for focus")
+            }
+        })
     }
 
     // Configure as Wayland layer shell overlay with exclusive keyboard focus
