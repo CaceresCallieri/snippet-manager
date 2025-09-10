@@ -41,6 +41,11 @@ QtObject {
     readonly property int bonusCapitalLetter: 50       // Bonus for capital letter matches
     readonly property int bonusLengthNormalization: 100 // Bonus for shorter strings with matches
     
+    // Filtering thresholds for relative score filtering
+    readonly property real relativeScoreThreshold: 0.3  // Show results within 30% of top score
+    readonly property int minimumAbsoluteScore: 150     // Always show matches above this score
+    readonly property int maxResultsLimit: 10          // Maximum results to show regardless of score
+    
     // ============================================================================
     // PUBLIC API
     // ============================================================================
@@ -92,8 +97,54 @@ QtObject {
         // Sort by score descending (highest relevance first)
         scoredResults.sort(function(a, b) { return b.score - a.score })
         
+        // Apply intelligent filtering based on relative scores
+        var filteredResults = applyScoreFiltering(scoredResults)
+        
         // Extract just the snippets
-        return scoredResults.map(function(result) { return result.snippet })
+        return filteredResults.map(function(result) { return result.snippet })
+    }
+    
+    /**
+     * Apply intelligent filtering based on relative score thresholds
+     * 
+     * Filters results using adaptive thresholds to show only relevant matches
+     * while ensuring quality results are never hidden.
+     * 
+     * @param {Array} scoredResults - Array of {snippet, score} objects sorted by score
+     * @returns {Array} Filtered array of scored results
+     * 
+     * Filtering strategy:
+     * 1. Always show results above minimumAbsoluteScore (high-quality matches)
+     * 2. Show results within relativeScoreThreshold of top score (contextually relevant)
+     * 3. Limit total results to maxResultsLimit for performance
+     * 4. Always show at least the top result if any matches exist
+     * 
+     * Side effects:
+     * - No side effects - pure filtering function
+     * - Maintains sort order from input
+     */
+    function applyScoreFiltering(scoredResults) {
+        if (scoredResults.length === 0) {
+            return []
+        }
+        
+        // Always include the top result
+        var filteredResults = [scoredResults[0]]
+        var topScore = scoredResults[0].score
+        var scoreThreshold = Math.max(
+            topScore * relativeScoreThreshold,  // Relative threshold
+            minimumAbsoluteScore                // Absolute minimum
+        )
+        
+        // Add additional results that meet the threshold
+        for (var i = 1; i < scoredResults.length && filteredResults.length < maxResultsLimit; i++) {
+            var result = scoredResults[i]
+            if (result.score >= scoreThreshold) {
+                filteredResults.push(result)
+            }
+        }
+        
+        return filteredResults
     }
     
     // ============================================================================

@@ -760,6 +760,12 @@ readonly property var filteredSnippets: {
 - **Enhancement bonuses**: Capital letter matches, length normalization
 - **Typo tolerance**: Basic fuzzy matching with 70% character coverage threshold
 
+**Adaptive Filtering**: Intelligent result filtering based on relative score thresholds
+- **30% relative threshold**: Shows results within 30% of top score for contextual relevance
+- **150pt absolute minimum**: Always shows high-quality matches regardless of relative scores
+- **Smart result limiting**: 1-10 results based on query specificity (empty query shows all)
+- **Top result guarantee**: Always shows best match even if standing alone
+
 **Performance**: Optimized for real-time search with <100 snippets, ES5 compatible for QML JavaScript engine
 
 ### Keyboard Navigation from Search Field
