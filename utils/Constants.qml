@@ -53,5 +53,30 @@ QtObject {
         readonly property color noResultsColor: "#888888"
         readonly property int feedbackFontSize: 12
         readonly property color matchHighlightTextColor: "#00ff00"
+        readonly property int characterCountThreshold: 50
+        readonly property int smallTextFontSize: 8
+        readonly property color characterCountColor: "#aaaaaa"
+        readonly property color placeholderTextColor: "#898989"
+    }
+
+    // Data Validation Limits
+    readonly property QtObject validation: QtObject {
+        readonly property int maxTitleLength: 200
+        readonly property int maxContentLength: 10000
+    }
+
+    // UI Colors
+    readonly property QtObject colors: QtObject {
+        readonly property color mainBorder: "#666666"
+        readonly property color selectedBackground: "#444444"
+        readonly property color unselectedBackground: "#2a2a2a"
+        readonly property color selectedBorder: "#ffffff"
+        readonly property color unselectedBorder: "#555555"
+        readonly property color characterCountNormal: "#aaaaaa"
+    }
+
+    // Layout Fractions
+    readonly property QtObject layout: QtObject {
+        readonly property real emptyStateWidthFraction: 0.9
     }
 }

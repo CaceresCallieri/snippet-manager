@@ -602,7 +602,7 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         color: "#1a1a1a"
-        border.color: "#666666"
+        border.color: Constants.colors.mainBorder
         border.width: Constants.borderWidth
         radius: Constants.borderRadius
         
@@ -654,7 +654,7 @@ PanelWindow {
             height: Constants.search.inputHeight
             
             placeholderText: "Search snippets..."
-            placeholderTextColor: "#898989"
+            placeholderTextColor: Constants.search.placeholderTextColor
             font.pixelSize: Constants.search.fontSize
             leftPadding: Constants.textMargins
             rightPadding: Constants.textMargins
@@ -685,13 +685,13 @@ PanelWindow {
             
             // Character count indicator for long searches
             Text {
-                visible: parent.text.length > 50
+                visible: parent.text.length > Constants.search.characterCountThreshold
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.margins: 2
                 text: parent.text.length + "/" + Constants.search.maxInputLength
-                font.pixelSize: 8
-                color: parent.text.length >= Constants.search.maxInputLength ? Constants.search.warningColor : "#aaaaaa"
+                font.pixelSize: Constants.search.smallTextFontSize
+                color: parent.text.length >= Constants.search.maxInputLength ? Constants.search.warningColor : Constants.search.characterCountColor
             }
         }
         
@@ -727,8 +727,8 @@ PanelWindow {
                     Rectangle {
                         width: snippetColumn.width
                         height: Constants.snippetItemHeight
-                        color: index === navigationController.currentIndex ? "#444444" : "#2a2a2a"
-                        border.color: index === navigationController.currentIndex ? "#ffffff" : "#555555"
+                        color: index === navigationController.currentIndex ? Constants.colors.selectedBackground : Constants.colors.unselectedBackground
+                        border.color: index === navigationController.currentIndex ? Constants.colors.selectedBorder : Constants.colors.unselectedBorder
                         border.width: Constants.borderWidth
                         radius: Constants.itemBorderRadius
                         

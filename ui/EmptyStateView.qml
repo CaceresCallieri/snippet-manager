@@ -12,7 +12,7 @@ Item {
     Column {
         anchors.centerIn: parent
         spacing: Constants.itemSpacing * 2
-        width: parent.width * 0.9
+        width: parent.width * Constants.layout.emptyStateWidthFraction
         
         // Main empty state message
         Text {

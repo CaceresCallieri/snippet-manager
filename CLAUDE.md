@@ -541,9 +541,17 @@ For environments where `no_warps = true` is required or for more reliable focus 
 - **Script execution**: Fixed using `Qt.resolvedUrl("inject-text.sh")` for portable script path resolution
 
 ## Constants Architecture
-- **Centralized configuration**: All UI dimensions, timing, and styling values in `/utils/Constants.qml` singleton
+- **Centralized configuration**: All UI dimensions, timing, styling values, and validation limits in `/utils/Constants.qml` singleton
 - **QML singleton pattern**: Use `import "../utils"` then `Constants.propertyName` for consistent values
 - **Shell script integration**: Timing constants documented in comments for bash script reference
+
+**Organized Constant Categories**:
+- `validation`: Data validation limits (maxTitleLength: 200, maxContentLength: 10000)
+- `colors`: UI color palette (mainBorder, selectedBackground, unselectedBackground, etc.)
+- `search`: Search-related constants (characterCountThreshold: 50, placeholderTextColor, etc.)
+- `layout`: Layout calculations (emptyStateWidthFraction: 0.9)
+
+**IMPORTANT**: Always use Constants references instead of hardcoded values to maintain consistency and enable easy configuration changes.
 
 ## Error Handling & User Notifications
 

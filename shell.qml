@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import "ui" as UI
+import "utils"
 
 ShellRoot {
     id: root
@@ -137,13 +138,13 @@ ShellRoot {
         }
         
         // Level 4: Content limits (consistent with inject-text.sh)
-        if (snippet.title.length > 200) {
-            console.warn(`Snippet ${index}: Title too long (${snippet.title.length} chars, max 200)`)
+        if (snippet.title.length > Constants.validation.maxTitleLength) {
+            console.warn(`Snippet ${index}: Title too long (${snippet.title.length} chars, max ${Constants.validation.maxTitleLength})`)
             return false
         }
         
-        if (snippet.content.length > 10000) {
-            console.warn(`Snippet ${index}: Content too long (${snippet.content.length} chars, max 10KB)`)
+        if (snippet.content.length > Constants.validation.maxContentLength) {
+            console.warn(`Snippet ${index}: Content too long (${snippet.content.length} chars, max ${Constants.validation.maxContentLength})`)
             return false
         }
         
