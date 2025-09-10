@@ -325,6 +325,22 @@ onDisplayedSnippetsChanged: trackCalculation()
 - Maintains all debug tracking functionality
 - Follows QML best practices for computed properties
 
+### Performance Optimization: 3-Stage Caching Architecture
+**Enhancement**: Replaced single `displayedSnippets` property with 3-stage caching system for optimal performance.
+
+**Architecture** (`ui/OverlayWindow.qml:30-84`):
+- **Stage 1** `filteredSnippets`: Only recomputes when search text changes
+- **Stage 2** `highlightedSnippets`: Only recomputes when filtering results or search text changes  
+- **Stage 3** `displayedSnippets`: Only recomputes when navigation state changes
+
+**Performance Monitoring**: Added separate counters (`filteringCalculationCount`, `highlightingCalculationCount`, `displayCalculationCount`) with debug handlers to track optimization effectiveness.
+
+**Benefits**:
+- Navigation operations no longer trigger expensive filtering operations
+- Search performance scales better with larger snippet collections
+- Clear separation between filtering, highlighting, and display logic
+- Detailed performance monitoring for future optimization efforts
+
 ### Persistent Focus with WlrLayershell
 
 Replaced HyprlandFocusGrab with Wayland layer shell exclusive keyboard focus to prevent system shortcuts from dismissing the overlay.

@@ -18,7 +18,7 @@ PanelWindow {
      */
     NavigationController {
         id: navigationController
-        snippets: window.displayedSnippets
+        snippets: window.highlightedSnippets
         isDebugLoggingEnabled: window.isDebugLoggingEnabled
         
         onSelectionChanged: {
@@ -28,37 +28,56 @@ PanelWindow {
     }
     
     /**
-     * Real-time filtered snippets based on search input
+     * Stage 1: Cache filtered results (only recomputes when search changes)
      * Filters both title and content fields with case-insensitive matching
      * 
-     * @returns {Array} Currently displayed snippets after search filtering
+     * @returns {Array} All snippets matching current search term
      */
-    property var displayedSnippets: {
-        const searchTerm = (searchInput?.text || "").toLowerCase()
-        const searchText = searchInput?.text || ""
-        
-        if (!searchTerm) {
-            // No search term - return all snippets with escaped titles (no highlighting)
-            return sourceSnippets.map(snippet => {
-                return {
-                    title: snippet.title,
-                    content: snippet.content,
-                    highlightedTitle: escapeHtml(snippet.title)
-                }
-            })
+    readonly property var filteredSnippets: {
+        if (!searchInput || !searchInput.text || searchInput.text.length === 0) {
+            return sourceSnippets
         }
         
-        // Filter and highlight in one pass for optimal performance
-        return sourceSnippets.filter(snippet => 
-            snippet.title.toLowerCase().includes(searchTerm) ||
-            snippet.content.toLowerCase().includes(searchTerm)
-        ).map(snippet => {
-            return {
+        const searchTerm = searchInput.text.toLowerCase()
+        return sourceSnippets.filter(snippet => {
+            const titleMatch = snippet.title.toLowerCase().includes(searchTerm)
+            const contentMatch = snippet.content.toLowerCase().includes(searchTerm)
+            return titleMatch || contentMatch
+        })
+    }
+    
+    /**
+     * Stage 2: Cache highlighted results (only recomputes when filteredSnippets or search changes)
+     * Applies search term highlighting to filtered snippets for display
+     * 
+     * @returns {Array} Filtered snippets with highlighted titles for display
+     */
+    readonly property var highlightedSnippets: {
+        const searchActive = searchInput?.text?.length > 0
+        if (!searchActive) {
+            return filteredSnippets.map(snippet => ({
                 title: snippet.title,
                 content: snippet.content,
-                highlightedTitle: highlightSearchTerm(snippet.title, searchText)
-            }
-        })
+                highlightedTitle: escapeHtml(snippet.title)
+            }))
+        }
+        
+        const searchTerm = searchInput.text.trim()
+        return filteredSnippets.map(snippet => ({
+            title: snippet.title,
+            content: snippet.content,
+            highlightedTitle: highlightSearchTerm(snippet.title, searchTerm)
+        }))
+    }
+    
+    /**
+     * Stage 3: Display window (only recomputes when navigation or highlighting changes)
+     * Uses NavigationController's sliding window to show subset of highlighted snippets
+     * 
+     * @returns {Array} Currently visible snippet window for UI display
+     */
+    readonly property var displayedSnippets: {
+        return navigationController.visibleSnippetWindow
     }
 
     /**
@@ -67,13 +86,31 @@ PanelWindow {
      * 
      * @returns {boolean} True if displayed snippets array contains at least one valid snippet
      */
-    property bool hasSnippetsToDisplay: displayedSnippets.length > 0
+    property bool hasSnippetsToDisplay: filteredSnippets.length > 0
     
     // Performance measurement (external counters to avoid binding loops)
+    property int filteringCalculationCount: 0
+    property int highlightingCalculationCount: 0
     property int displayCalculationCount: 0
     
     signal snippetSelected(var snippet)
     signal dismissed()
+    
+    // Performance monitoring handlers (avoid binding loops by using external handlers)
+    onFilteredSnippetsChanged: {
+        filteringCalculationCount++
+        window.debugLog(`🔍 Filtering recalculated (${filteringCalculationCount} times) - ${filteredSnippets.length} results`)
+    }
+    
+    onHighlightedSnippetsChanged: {
+        highlightingCalculationCount++
+        window.debugLog(`✨ Highlighting recalculated (${highlightingCalculationCount} times)`)
+    }
+    
+    onDisplayedSnippetsChanged: {
+        displayCalculationCount++
+        window.debugLog(`📊 Display window recalculated (${displayCalculationCount} times)`)
+    }
     
     /**
      * Conditionally logs debug messages with emoji markers
@@ -121,7 +158,7 @@ PanelWindow {
         }
         
         const searchActive = searchInput?.text?.length > 0
-        const matchCount = displayedSnippets.length  
+        const matchCount = filteredSnippets.length  
         const totalCount = sourceSnippets.length
         const currentPos = navigationController.globalIndex + 1
         
