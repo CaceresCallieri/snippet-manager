@@ -144,7 +144,7 @@ PanelWindow {
     
     /**
      * Generates count text based on current search and navigation state
-     * Handles empty state, active search, and normal navigation scenarios
+     * Delegates to specific functions for each UI state for improved maintainability
      * 
      * @returns {string} Count text with current position and total info
      * 
@@ -154,25 +154,79 @@ PanelWindow {
      */
     function getCountText() {
         if (sourceSnippets.length === 0) {
-            return "No snippets available"
+            return getEmptyStateMessage()
         }
         
         const searchActive = searchInput?.text?.length > 0
-        const matchCount = filteredSnippets.length  
+        if (searchActive) {
+            return getSearchStateMessage()
+        } else {
+            return getNormalNavigationMessage()
+        }
+    }
+
+    /**
+     * Returns message for empty snippet state
+     * 
+     * @returns {string} Empty state message
+     */
+    function getEmptyStateMessage() {
+        return "No snippets available"
+    }
+
+    /**
+     * Returns appropriate message for search state
+     * Handles both no matches and partial matches cases
+     * 
+     * @returns {string} Search state message
+     */
+    function getSearchStateMessage() {
+        const matchCount = filteredSnippets.length
+        const searchTerm = searchInput.text
+        
+        if (matchCount === 0) {
+            return getNoMatchesMessage(searchTerm)
+        }
+        
         const totalCount = sourceSnippets.length
+        if (matchCount < totalCount) {
+            return getPartialMatchesMessage(matchCount, totalCount)
+        }
+        
+        return getNormalNavigationMessage()
+    }
+
+    /**
+     * Returns message when no search matches are found
+     * 
+     * @param {string} searchTerm - The search term that produced no matches
+     * @returns {string} No matches message
+     */
+    function getNoMatchesMessage(searchTerm) {
+        return `No matches for "${searchTerm}"`
+    }
+
+    /**
+     * Returns message for partial search matches with position info
+     * 
+     * @param {number} matchCount - Number of matches found
+     * @param {number} totalCount - Total number of snippets
+     * @returns {string} Partial matches message with position
+     */
+    function getPartialMatchesMessage(matchCount, totalCount) {
         const currentPos = navigationController.globalIndex + 1
-        
-        // Handle search with no results
-        if (searchActive && matchCount === 0) {
-            return `No matches for "${searchInput.text}"`
-        }
-        
-        // Handle filtered search results
-        if (searchActive && matchCount < totalCount) {
-            return `${currentPos}/${matchCount} • ${matchCount} of ${totalCount} total`
-        }
-        
-        // Handle normal navigation (no search or showing all results)
+        return `${currentPos}/${matchCount} • ${matchCount} of ${totalCount} total`
+    }
+
+    /**
+     * Returns message for normal navigation state
+     * Shows current position out of total available items
+     * 
+     * @returns {string} Normal navigation message
+     */
+    function getNormalNavigationMessage() {
+        const currentPos = navigationController.globalIndex + 1
+        const totalCount = filteredSnippets.length || sourceSnippets.length
         return `${currentPos}/${totalCount}`
     }
     

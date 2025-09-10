@@ -209,6 +209,27 @@ All complex functions use JSDoc format with:
 
 **IMPORTANT**: All new functions must include JSDoc documentation following the established pattern above. This ensures consistent code quality and maintainability.
 
+### Function Extraction Patterns
+**Complex Conditional Logic**: When functions have multiple nested conditions handling different UI states, extract each state into focused functions:
+
+```javascript
+// Before: Complex nested conditionals
+function getCountText() {
+    if (condition1) { return "message1" }
+    if (condition2 && subcondition) { return "complex message" }
+    // ... more conditions
+}
+
+// After: Clear delegation with focused helpers
+function getCountText() {
+    if (isEmpty()) return getEmptyStateMessage()
+    if (isSearchActive()) return getSearchStateMessage()
+    return getNormalMessage()
+}
+```
+
+**Benefits**: Improved testability, easier modification of specific cases, reduced cognitive load, better maintainability.
+
 ## Development Resources
 
 ### QuickShell Documentation
