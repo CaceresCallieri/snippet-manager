@@ -141,24 +141,25 @@ These names immediately communicate purpose and reduce cognitive load for mainte
 ### Navigation Controller Architecture
 Navigation logic extracted into dedicated `ui/NavigationController.qml` component for clean separation of concerns:
 
-**Extracted Navigation Controller**:
-- **Standalone component**: 300-line dedicated navigation controller with complete sliding window logic
-- **16 helper functions**: Condition predicates, action functions, wrap-around calculations, and state management
-- **Signal-based communication**: `selectionChanged()` signal for UI synchronization
-- **Property bindings**: `globalIndex`, `visibleSnippetWindow`, `currentIndex` properties for UI data binding
-- **Complete isolation**: Navigation algorithms completely separated from UI presentation
+**Refactored Navigation Controller (Major Simplification)**:
+- **Simplified from 384 → 211 lines**: Achieved 45% code reduction through over-engineering elimination
+- **Removed 16+ helper functions**: Replaced complex predicate system with direct array index calculations
+- **Streamlined navigation logic**: Two main functions (`moveUp()`, `moveDown()`) with inline bounds checking
+- **Maintained full functionality**: All sliding window, wrap-around, and API compatibility preserved
+- **Direct calculations**: Eliminated unnecessary abstraction layers while keeping code readable
 
-**OverlayWindow Refactoring**:
-- **Simplified from 570 → 350 lines**: Removed 135 lines of navigation logic 
-- **Pure UI presentation**: Focus on rendering, event handling, and user interaction
-- **Controller integration**: Uses NavigationController instance for all navigation operations
-- **Clean separation**: UI component binds to controller properties, calls controller methods
+**Technical Improvements**:
+- **Inline bounds checking**: Replaced `canMoveUpWithinWindow()`, `canScrollWindowUp()` with direct conditions
+- **Consolidated state management**: Eliminated separate action functions for window/cursor movement
+- **Clear variable names**: `visibleRangeStartIndex` instead of `windowStart` for better clarity
+- **Simplified property bindings**: Direct calculations in `globalIndex` and `visibleSnippetWindow`
 
 **Benefits**: 
-- **Testability**: Navigation logic can be unit tested independently of UI
-- **Maintainability**: Two focused components instead of monolithic file
-- **Reusability**: NavigationController available for other UI components
-- **Code clarity**: Clear interfaces between navigation algorithms and presentation layer
+- **Reduced cognitive load**: Easier to understand navigation logic without layers of abstraction
+- **Better maintainability**: Fewer functions to track and modify for changes
+- **Improved debuggability**: Direct calculations easier to trace and troubleshoot
+- **Lower bug risk**: Simpler code with fewer complex interactions between functions
+- **Easier extensions**: Cleaner foundation for future navigation enhancements
 
 ### JSDoc Documentation Standards
 Comprehensive JSDoc comments added to 20+ functions across the codebase for maintainability:
