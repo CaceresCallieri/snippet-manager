@@ -203,7 +203,7 @@ ShellRoot {
                                 root.loadedValidSnippets = [] // Keep clean empty array - UI will handle empty state
                             } else {
                                 root.loadedValidSnippets = validSnippets
-                                console.log(`✅ Validated ${validSnippets.length} of ${parsed.length} snippets from JSON file`)
+                                root.debugLog(`✅ Validated ${validSnippets.length} of ${parsed.length} snippets from JSON file`)
                                 if (validSnippets.length < parsed.length) {
                                     console.warn(`⚠️ ${parsed.length - validSnippets.length} invalid snippets were filtered out`)
                                 }
@@ -241,7 +241,7 @@ ShellRoot {
         description: "Show snippet manager overlay"
         
         onPressed: {
-            console.log("GlobalShortcut pressed - toggling overlay")
+            root.debugLog("GlobalShortcut pressed - toggling overlay")
             root.isOverlayVisible = !root.isOverlayVisible
         }
     }
@@ -258,13 +258,13 @@ ShellRoot {
         
         UI.OverlayWindow {
             sourceSnippets: root.loadedValidSnippets
-            isDebugLoggingEnabled: root.isDebugLoggingEnabled
+            debugLog: root.debugLog
             
             // Pass notification function for UI error handling
             property var notifyUser: root.notifyUser
             
             onSnippetSelected: function(snippet) {
-                console.log("📋 Selected snippet:", snippet.title)
+                root.debugLog("📋 Selected snippet: " + snippet.title)
                 root.debugLog("🚀 Launching detached script with text argument...")
                 
                 // Validate snippet data before processing
@@ -301,7 +301,7 @@ ShellRoot {
             }
             
             onDismissed: {
-                console.log("❌ Snippet manager dismissed")
+                root.debugLog("❌ Snippet manager dismissed")
                 Qt.quit()
             }
         }

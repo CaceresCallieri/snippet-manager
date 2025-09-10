@@ -9,7 +9,7 @@ PanelWindow {
     id: window
     
     property var sourceSnippets: []
-    property bool isDebugLoggingEnabled: false
+    property var debugLog: null
     property var notifyUser: null
     
     /**
@@ -19,7 +19,7 @@ PanelWindow {
     NavigationController {
         id: navigationController
         snippets: window.highlightedSnippets
-        isDebugLoggingEnabled: window.isDebugLoggingEnabled
+        debugLog: window.debugLog
         
         onSelectionChanged: {
             // Navigation state changed - UI will automatically update via property bindings
@@ -110,22 +110,6 @@ PanelWindow {
     onDisplayedSnippetsChanged: {
         displayCalculationCount++
         window.debugLog(`📊 Display window recalculated (${displayCalculationCount} times)`)
-    }
-    
-    /**
-     * Conditionally logs debug messages with emoji markers
-     * Only outputs when debug mode is enabled to keep production output clean.
-     * 
-     * @param {string} message - Debug message to log (should include emoji marker for consistency)
-     * 
-     * Side effects:
-     * - Logs message to console only if isDebugLoggingEnabled is true
-     * - No output in production mode (isDebugLoggingEnabled: false)
-     */
-    function debugLog(message) {
-        if (isDebugLoggingEnabled) {
-            console.log(message)
-        }
     }
     
     /**
@@ -240,10 +224,10 @@ PanelWindow {
      * - Used for performance regression detection during development
      */
     function showPerformanceSummary() {
-        console.log("🔍 PERFORMANCE SUMMARY (NAVIGATION CONTROLLER EXTRACTED):")
-        console.log("   - Navigation logic: EXTRACTED ✅")
-        console.log("   - UI presentation: SEPARATED ✅")
-        console.log("   - Code maintainability: IMPROVED ✅")
+        window.debugLog("🔍 PERFORMANCE SUMMARY (NAVIGATION CONTROLLER EXTRACTED):")
+        window.debugLog("   - Navigation logic: EXTRACTED ✅")
+        window.debugLog("   - UI presentation: SEPARATED ✅")
+        window.debugLog("   - Code maintainability: IMPROVED ✅")
     }
     
     /**
@@ -598,7 +582,7 @@ PanelWindow {
     // Configure as Wayland layer shell overlay with exclusive keyboard focus
     // This prevents system shortcuts (like super+p) from dismissing the overlay
     Component.onCompleted: {
-        console.log("OverlayWindow: Created with", sourceSnippets.length, "snippets")
+        window.debugLog("OverlayWindow: Created with " + sourceSnippets.length + " snippets")
         
         const layerShellSuccess = configureLayerShell()
         initializeFocus(layerShellSuccess)

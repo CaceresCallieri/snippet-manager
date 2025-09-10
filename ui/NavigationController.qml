@@ -59,9 +59,9 @@ QtObject {
     property int maxDisplayed: Constants.maxVisibleSnippets
     
     /**
-     * Enable/disable debug logging output
+     * Debug logging function passed from parent component
      */
-    property bool isDebugLoggingEnabled: false
+    property var debugLog: null
     
     // ============================================================================
     // COMPUTED PROPERTIES
@@ -187,15 +187,6 @@ QtObject {
     // PRIVATE METHODS
     // ============================================================================
     
-    /**
-     * Conditional debug logging with NavigationController prefix
-     * @param {string} message - Debug message to log (should include emoji marker)
-     */
-    function debugLog(message) {
-        if (isDebugLoggingEnabled) {
-            console.log("NavigationController: " + message)
-        }
-    }
     
     // ============================================================================
     // EVENT HANDLERS

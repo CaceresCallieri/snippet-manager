@@ -230,6 +230,28 @@ function getCountText() {
 
 **Benefits**: Improved testability, easier modification of specific cases, reduced cognitive load, better maintainability.
 
+### Debug Logging Standards
+**Centralized Pattern**: Use single canonical `debugLog()` function with property delegation pattern:
+
+```javascript
+// In shell.qml - canonical implementation
+function debugLog(message) {
+    if (isDebugLoggingEnabled) {
+        console.log(message)
+    }
+}
+
+// In components - receive as property
+property var debugLog: null
+
+// In parent - pass function down
+Component {
+    debugLog: root.debugLog
+}
+```
+
+**Guidelines**: Always use passed `debugLog` property, never create local wrapper functions, consistent emoji markers for categorization.
+
 ## Development Resources
 
 ### QuickShell Documentation
