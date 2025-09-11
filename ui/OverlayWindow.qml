@@ -186,34 +186,10 @@ PanelWindow {
     function validateAndSelectSnippet(snippet, source) {
         window.debugLog("🔍 Validating snippet from " + source + ": " + (snippet ? snippet.title : "null"))
         
-        if (!snippet) {
-            console.error("❌ Snippet selection failed - null snippet from " + source)
+        if (!Validation.isValidSnippetStructure(snippet)) {
+            console.error("❌ Snippet selection failed - validation error from " + source)
             if (notifyUser) {
                 notifyUser("Snippet Manager Error", "Invalid snippet data - selection failed", "critical")
-            }
-            return false
-        }
-        
-        if (typeof snippet !== 'object') {
-            console.error("❌ Snippet selection failed - invalid object type from " + source + ": " + typeof snippet)
-            if (notifyUser) {
-                notifyUser("Snippet Manager Error", "Corrupted snippet data detected", "critical")
-            }
-            return false
-        }
-        
-        if (!snippet.hasOwnProperty('title') || typeof snippet.title !== 'string') {
-            console.error("❌ Snippet selection failed - invalid title from " + source)
-            if (notifyUser) {
-                notifyUser("Snippet Manager Error", "Snippet missing title property", "critical")
-            }
-            return false
-        }
-        
-        if (!snippet.hasOwnProperty('content') || typeof snippet.content !== 'string') {
-            console.error("❌ Snippet selection failed - invalid content from " + source)
-            if (notifyUser) {
-                notifyUser("Snippet Manager Error", "Snippet missing content property", "critical")
             }
             return false
         }

@@ -2,3 +2,4 @@ module utils
 
 singleton Constants 1.0 Constants.qml
 singleton FuzzySearch 1.0 FuzzySearch.qml
+singleton Validation 1.0 Validation.qml

@@ -266,6 +266,25 @@ function getCountText() {
 
 **Benefits**: Improved testability, easier modification of specific cases, reduced cognitive load, better maintainability.
 
+### Validation Logic Consolidation
+**Implementation**: Unified validation utility (`utils/Validation.qml`) eliminates code duplication across multiple components.
+
+**Problem Solved**: The same snippet validation logic was repeated in 4+ places (`shell.qml`, `CombiningModeController.qml`, `SnippetCombiner.qml`, `OverlayWindow.qml`), making maintenance difficult and increasing risk of inconsistent validation behavior.
+
+**Architecture**:
+- **Single source of truth**: All validation logic centralized in singleton
+- **Consistent validation**: Same validation rules applied across all components
+- **Maintainable constants**: Validation limits sourced from Constants.validation
+- **Backward compatibility**: Preserved existing error messages and logging behavior
+
+**Key Functions**:
+- `isValidSnippet()` - Comprehensive validation with size limits and detailed logging
+- `isValidSnippetStructure()` - Fast validation without size limits or logging
+- `isValidSnippetArray()` - Collection validation for combination operations  
+- `validateSnippetForAddition()` - UI-specific validation with error callback support
+
+**Benefits**: Single point of maintenance for validation logic, consistent behavior across components, reduced code duplication (~100+ lines eliminated), improved testability.
+
 ### Debug Logging Standards
 **Centralized Pattern**: Use single canonical `debugLog()` function with property delegation pattern:
 

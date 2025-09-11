@@ -176,7 +176,10 @@ Item {
      * - Logs detailed operation results for debugging
      */
     function addSnippet(snippet) {
-        if (!validateSnippetForAddition(snippet)) {
+        if (!Validation.validateSnippetForAddition(snippet, function(error, type) {
+            debugLog(`❌ ${error}`)
+            additionFailed(error, type)
+        })) {
             return false
         }
         
@@ -343,42 +346,6 @@ Item {
     // PRIVATE HELPERS
     // ============================================================================
     
-    /**
-     * Validates a snippet object before adding to combination
-     * @param {Object} snippet - Snippet to validate
-     * @returns {boolean} True if snippet is valid for addition
-     */
-    function validateSnippetForAddition(snippet) {
-        if (!snippet) {
-            const error = "Cannot add null snippet to combination"
-            debugLog(`❌ ${error}`)
-            additionFailed(error, "invalid_data")
-            return false
-        }
-        
-        if (typeof snippet !== 'object') {
-            const error = `Invalid snippet type: expected object, got ${typeof snippet}`
-            debugLog(`❌ ${error}`)
-            additionFailed(error, "invalid_data")
-            return false
-        }
-        
-        if (!snippet.hasOwnProperty('title') || typeof snippet.title !== 'string') {
-            const error = "Snippet missing valid title property"
-            debugLog(`❌ ${error}`)
-            additionFailed(error, "invalid_data")
-            return false
-        }
-        
-        if (!snippet.hasOwnProperty('content') || typeof snippet.content !== 'string') {
-            const error = "Snippet missing valid content property"
-            debugLog(`❌ ${error}`)
-            additionFailed(error, "invalid_data")
-            return false
-        }
-        
-        return true
-    }
     
     /**
      * Recalculates and updates the combined character count

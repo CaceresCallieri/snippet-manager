@@ -52,103 +52,29 @@ ShellRoot {
     
     /**
      * Fast validation for snippet data before text injection
-     * Used as final safety check before processing user-selected snippets.
+     * Delegates to unified Validation.qml singleton for consistency.
      * 
      * @param {Object} snippet - Snippet object to validate
      * @returns {boolean} True if snippet has valid structure and properties
-     * 
-     * Validation checks:
-     * - Object existence and type
-     * - Required properties (title, content) exist and are strings
-     * 
-     * Side effects:
-     * - Logs detailed error messages for each validation failure
-     * - Does NOT check content length limits (handled by validateSnippet)
      */
     function validateSnippetData(snippet) {
-        if (!snippet) {
-            console.error("❌ Snippet data is null or undefined")
-            return false
+        const isValid = Validation.isValidSnippetStructure(snippet)
+        if (!isValid) {
+            console.error("❌ Snippet data validation failed")
         }
-        
-        if (typeof snippet !== 'object') {
-            console.error("❌ Snippet data is not an object:", typeof snippet)
-            return false
-        }
-        
-        if (!snippet.hasOwnProperty('title') || typeof snippet.title !== 'string') {
-            console.error("❌ Snippet missing valid title property")
-            return false
-        }
-        
-        if (!snippet.hasOwnProperty('content') || typeof snippet.content !== 'string') {
-            console.error("❌ Snippet missing valid content property")
-            return false
-        }
-        
-        return true
+        return isValid
     }
     
     /**
      * Comprehensive multi-level validation for snippet objects during data loading
-     * Ensures only safe, well-formed snippets are displayed in the UI.
-     * Consistent with security boundaries enforced by inject-text.sh.
+     * Delegates to unified Validation.qml singleton for consistency.
      * 
      * @param {Object} snippet - Snippet object from JSON file to validate
      * @param {number} index - Array index for detailed error reporting
      * @returns {boolean} True if snippet passes all validation levels
-     * 
-     * Validation levels:
-     * 1. Object structure - existence and type checking
-     * 2. Required fields - title and content properties must exist
-     * 3. Type validation - both properties must be strings
-     * 4. Content limits - title ≤ 200 chars, content ≤ 10KB
-     * 
-     * Side effects:
-     * - Logs warning messages for each validation failure with specific details
-     * - Uses index parameter to identify problematic snippets in console output
      */
     function validateSnippet(snippet, index) {
-        // Level 1: Object structure validation
-        if (!snippet || typeof snippet !== 'object') {
-            console.warn(`Snippet ${index}: Invalid object (${typeof snippet})`)
-            return false
-        }
-        
-        // Level 2: Required field validation
-        if (!snippet.hasOwnProperty('title')) {
-            console.warn(`Snippet ${index}: Missing title property`)
-            return false
-        }
-        
-        if (!snippet.hasOwnProperty('content')) {
-            console.warn(`Snippet ${index}: Missing content property`)
-            return false
-        }
-        
-        // Level 3: Type validation
-        if (typeof snippet.title !== 'string') {
-            console.warn(`Snippet ${index}: Title must be string, got ${typeof snippet.title}`)
-            return false
-        }
-        
-        if (typeof snippet.content !== 'string') {
-            console.warn(`Snippet ${index}: Content must be string, got ${typeof snippet.content}`)
-            return false
-        }
-        
-        // Level 4: Content limits (consistent with inject-text.sh)
-        if (snippet.title.length > Constants.validation.maxTitleLength) {
-            console.warn(`Snippet ${index}: Title too long (${snippet.title.length} chars, max ${Constants.validation.maxTitleLength})`)
-            return false
-        }
-        
-        if (snippet.content.length > Constants.validation.maxContentLength) {
-            console.warn(`Snippet ${index}: Content too long (${snippet.content.length} chars, max ${Constants.validation.maxContentLength})`)
-            return false
-        }
-        
-        return true
+        return Validation.isValidSnippet(snippet, index)
     }
     
     /**
@@ -186,7 +112,7 @@ ShellRoot {
                         const parsed = JSON.parse(xhr.responseText)
                         if (Array.isArray(parsed)) {
                             // Apply validation with filtering for graceful degradation
-                            const validSnippets = parsed.filter((snippet, index) => root.validateSnippet(snippet, index))
+                            const validSnippets = parsed.filter((snippet, index) => Validation.isValidSnippet(snippet, index))
                             
                             if (validSnippets.length === 0) {
                                 console.warn("⚠️ No valid snippets found after validation")
@@ -268,7 +194,7 @@ ShellRoot {
                 root.debugLog("🚀 Launching detached script with text argument...")
                 
                 // Validate snippet data before processing
-                if (!root.validateSnippetData(snippet)) {
+                if (!Validation.isValidSnippetStructure(snippet)) {
                     console.error("❌ Invalid snippet data - cannot inject text")
                     root.notifyUser("Snippet Manager Error", "Invalid snippet data - text injection failed", "critical")
                     Qt.quit()

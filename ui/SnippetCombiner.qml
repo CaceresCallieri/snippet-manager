@@ -81,7 +81,7 @@ QtObject {
         for (var i = 0; i < snippets.length; i++) {
             const snippet = snippets[i]
             
-            if (!validateSnippetObject(snippet)) {
+            if (!Validation.isValidSnippetStructure(snippet)) {
                 const error = `Invalid snippet at index ${i}: missing required properties`
                 combinationFailed(error, "invalid_data")
                 return ""
@@ -92,8 +92,8 @@ QtObject {
         }
         
         // Validate combined size before creating final text
-        if (!validateCombinedSize(totalSize)) {
-            const error = `Combined content exceeds size limit: ${totalSize} > 10000 characters`
+        if (!Validation.isValidCombinedSize(totalSize)) {
+            const error = `Combined content exceeds size limit: ${totalSize} > ${Validation.maxContentLength} characters`
             combinationFailed(error, "size_limit")
             return ""
         }
@@ -102,7 +102,7 @@ QtObject {
         const combinedText = contentArray.join('\n')
         
         // Final validation of combined result
-        if (!validateFinalText(combinedText)) {
+        if (!Validation.isValidFinalText(combinedText)) {
             const error = "Combined text failed final validation checks"
             combinationFailed(error, "validation_failure")
             return ""
@@ -241,29 +241,5 @@ QtObject {
         return true
     }
     
-    /**
-     * Validates that combined size is within security limits
-     * @param {number} size - Total character count
-     * @returns {boolean} True if size is acceptable
-     */
-    function validateCombinedSize(size) {
-        return size > 0 && size <= 10000
-    }
     
-    /**
-     * Validates the final combined text
-     * @param {string} text - Combined text to validate
-     * @returns {boolean} True if text passes final validation
-     */
-    function validateFinalText(text) {
-        if (!text || typeof text !== 'string') {
-            return false
-        }
-        
-        if (text.length === 0 || text.length > 10000) {
-            return false
-        }
-        
-        return true
-    }
 }
