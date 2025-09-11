@@ -18,7 +18,7 @@ PanelWindow {
      */
     NavigationController {
         id: navigationController
-        snippets: window.highlightedSnippets
+        snippets: window.processedSnippets
         debugLog: window.debugLog
         
         onSelectionChanged: {
@@ -61,25 +61,17 @@ PanelWindow {
     }
     
     /**
-     * Stage 1: Cache filtered results (only recomputes when search changes)
-     * Filters both title and content fields with case-insensitive matching
+     * Single consolidated property: Processes snippets with filtering and highlighting
+     * Replaces the over-engineered three-stage caching system for better maintainability
      * 
-     * @returns {Array} All snippets matching current search term
+     * @returns {Array} Filtered snippets with highlighted titles ready for navigation
      */
-    readonly property var filteredSnippets: {
-        return FuzzySearch.searchAndRank(sourceSnippets, searchInput?.text || "")
-    }
-    
-    /**
-     * Stage 2: Cache highlighted results (only recomputes when filteredSnippets or search changes)
-     * Applies search term highlighting to filtered snippets for display
-     * 
-     * @returns {Array} Filtered snippets with highlighted titles for display
-     */
-    readonly property var highlightedSnippets: {
+    readonly property var processedSnippets: {
+        const filtered = FuzzySearch.searchAndRank(sourceSnippets, searchInput?.text || "")
         const searchActive = searchInput?.text?.length > 0
+        
         if (!searchActive) {
-            return filteredSnippets.map(snippet => ({
+            return filtered.map(snippet => ({
                 title: snippet.title,
                 content: snippet.content,
                 highlightedTitle: escapeHtml(snippet.title)
@@ -87,21 +79,11 @@ PanelWindow {
         }
         
         const searchTerm = searchInput.text.trim()
-        return filteredSnippets.map(snippet => ({
+        return filtered.map(snippet => ({
             title: snippet.title,
             content: snippet.content,
             highlightedTitle: highlightSearchTerm(snippet.title, searchTerm)
         }))
-    }
-    
-    /**
-     * Stage 3: Display window (only recomputes when navigation or highlighting changes)
-     * Uses NavigationController's sliding window to show subset of highlighted snippets
-     * 
-     * @returns {Array} Currently visible snippet window for UI display
-     */
-    readonly property var displayedSnippets: {
-        return navigationController.visibleSnippetWindow
     }
 
     /**
@@ -110,30 +92,18 @@ PanelWindow {
      * 
      * @returns {boolean} True if displayed snippets array contains at least one valid snippet
      */
-    property bool hasSnippetsToDisplay: filteredSnippets.length > 0
+    property bool hasSnippetsToDisplay: processedSnippets.length > 0
     
-    // Performance measurement (external counters to avoid binding loops)
-    property int filteringCalculationCount: 0
-    property int highlightingCalculationCount: 0
-    property int displayCalculationCount: 0
+    // Performance measurement (simplified after removing over-engineered caching)
+    property int processingCalculationCount: 0
     
     signal snippetSelected(var snippet)
     signal dismissed()
     
-    // Performance monitoring handlers (avoid binding loops by using external handlers)
-    onFilteredSnippetsChanged: {
-        filteringCalculationCount++
-        window.debugLog(`🔍 Filtering recalculated (${filteringCalculationCount} times) - ${filteredSnippets.length} results`)
-    }
-    
-    onHighlightedSnippetsChanged: {
-        highlightingCalculationCount++
-        window.debugLog(`✨ Highlighting recalculated (${highlightingCalculationCount} times)`)
-    }
-    
-    onDisplayedSnippetsChanged: {
-        displayCalculationCount++
-        window.debugLog(`📊 Display window recalculated (${displayCalculationCount} times)`)
+    // Performance monitoring handler (simplified after removing over-engineered caching)
+    onProcessedSnippetsChanged: {
+        processingCalculationCount++
+        window.debugLog(`🔄 Processing recalculated (${processingCalculationCount} times) - ${processedSnippets.length} results`)
     }
     
     /**
@@ -151,107 +121,31 @@ PanelWindow {
     }
     
     /**
-     * Generates count text based on current search and navigation state
-     * Delegates to specific functions for each UI state for improved maintainability
-     * 
-     * @returns {string} Count text with current position and total info
-     * 
-     * Side effects:
-     * - No side effects - pure text computation function  
-     * - Safe for use in property bindings
+     * Returns appropriate count text for different application states
      */
     function getCountText() {
-        // Priority 1: Combining mode status (highest priority)
+        // Combining mode takes priority
         if (combiningController.isCombiningMode) {
-            return getCombiningModeMessage()
+            return combiningController.statusMessage
         }
         
-        // Priority 2: Empty state handling
+        // Empty state handling
         if (sourceSnippets.length === 0) {
-            return getEmptyStateMessage()
+            return "No snippets available"
         }
         
-        // Priority 3: Search state vs normal navigation
+        // Search and navigation states
         const searchActive = searchInput?.text?.length > 0
-        if (searchActive) {
-            return getSearchStateMessage()
-        } else {
-            return getNormalNavigationMessage()
-        }
-    }
-
-    /**
-     * Returns message for combining mode state
-     * Shows current combination status with snippet count and size information
-     * 
-     * @returns {string} Combining mode status message
-     */
-    function getCombiningModeMessage() {
-        return combiningController.statusMessage
-    }
-    
-    /**
-     * Returns message for empty snippet state
-     * 
-     * @returns {string} Empty state message
-     */
-    function getEmptyStateMessage() {
-        return "No snippets available"
-    }
-
-    /**
-     * Returns appropriate message for search state
-     * Handles both no matches and partial matches cases
-     * 
-     * @returns {string} Search state message
-     */
-    function getSearchStateMessage() {
-        const matchCount = filteredSnippets.length
-        const searchTerm = searchInput.text
-        
-        if (matchCount === 0) {
-            return getNoMatchesMessage(searchTerm)
-        }
-        
-        const totalCount = sourceSnippets.length
-        if (matchCount < totalCount) {
-            return getPartialMatchesMessage(matchCount, totalCount)
-        }
-        
-        return getNormalNavigationMessage()
-    }
-
-    /**
-     * Returns message when no search matches are found
-     * 
-     * @param {string} searchTerm - The search term that produced no matches
-     * @returns {string} No matches message
-     */
-    function getNoMatchesMessage(searchTerm) {
-        return `No matches for "${searchTerm}"`
-    }
-
-    /**
-     * Returns message for partial search matches with position info
-     * 
-     * @param {number} matchCount - Number of matches found
-     * @param {number} totalCount - Total number of snippets
-     * @returns {string} Partial matches message with position
-     */
-    function getPartialMatchesMessage(matchCount, totalCount) {
         const currentPos = navigationController.globalIndex + 1
-        return `${currentPos}/${matchCount} • ${matchCount} of ${totalCount} total`
-    }
-
-    /**
-     * Returns message for normal navigation state
-     * Shows current position out of total available items
-     * 
-     * @returns {string} Normal navigation message
-     */
-    function getNormalNavigationMessage() {
-        const currentPos = navigationController.globalIndex + 1
-        const totalCount = filteredSnippets.length || sourceSnippets.length
+        const totalCount = processedSnippets.length
+        
+        if (searchActive && totalCount === 0) {
+            return `No matches for "${searchInput.text}"`
+        }
+        if (searchActive && totalCount < sourceSnippets.length) {
+            return `${currentPos}/${totalCount} • ${totalCount} of ${sourceSnippets.length} total`
+        }
+        
         return `${currentPos}/${totalCount}`
     }
     

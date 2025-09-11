@@ -232,6 +232,19 @@ All complex functions use JSDoc format with:
 
 **IMPORTANT**: All new functions must include JSDoc documentation following the established pattern above. This ensures consistent code quality and maintainability.
 
+### Performance Optimization Patterns
+**Eliminate Over-Engineering**: The codebase has been systematically simplified to remove unnecessary complexity:
+
+**Three-Stage Caching Elimination**: Replaced over-engineered `filteredSnippets` → `highlightedSnippets` → `displayedSnippets` pipeline with single `processedSnippets` property for better maintainability and equivalent performance.
+
+**Header Function Consolidation**: Consolidated 8+ trivial header functions with excessive documentation into single `getCountText()` function with clear conditional logic, removing ~75 lines of unnecessary code.
+
+**Principles**:
+- Prefer inline logic over excessive function delegation for simple operations
+- Consolidate trivial functions that only return single values or simple calculations
+- Eliminate intermediate caching layers unless they provide measurable performance benefits
+- Keep documentation proportional to code complexity
+
 ### Function Extraction Patterns
 **Complex Conditional Logic**: When functions have multiple nested conditions handling different UI states, extract each state into focused functions:
 
