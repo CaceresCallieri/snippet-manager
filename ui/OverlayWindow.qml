@@ -28,6 +28,39 @@ PanelWindow {
     }
     
     /**
+     * Combining mode controller handling snippet collection and combination logic
+     * Manages state for multi-snippet selection and provides API for combination operations
+     */
+    CombiningModeController {
+        id: combiningController
+        debugLog: window.debugLog
+        
+        onModeChanged: function(isActive) {
+            window.debugLog(`🔄 Combining mode ${isActive ? 'activated' : 'deactivated'}`)
+        }
+        
+        onSnippetReady: function(combinedSnippet) {
+            // Combined snippet is ready - trigger selection like normal snippet
+            window.debugLog(`📋 Combined snippet ready: ${combinedSnippet.content.length} characters`)
+            window.snippetSelected(combinedSnippet)
+        }
+        
+        onAdditionFailed: function(error, errorType) {
+            console.warn(`⚠️ Snippet addition failed: ${error} (${errorType})`)
+            if (notifyUser) {
+                notifyUser("Snippet Combination", error, "normal")
+            }
+        }
+        
+        onCombinationFailed: function(error, errorType) {
+            console.error(`❌ Snippet combination failed: ${error} (${errorType})`)
+            if (notifyUser) {
+                notifyUser("Snippet Manager Error", error, "critical")
+            }
+        }
+    }
+    
+    /**
      * Stage 1: Cache filtered results (only recomputes when search changes)
      * Filters both title and content fields with case-insensitive matching
      * 
@@ -128,10 +161,17 @@ PanelWindow {
      * - Safe for use in property bindings
      */
     function getCountText() {
+        // Priority 1: Combining mode status (highest priority)
+        if (combiningController.isCombiningMode) {
+            return getCombiningModeMessage()
+        }
+        
+        // Priority 2: Empty state handling
         if (sourceSnippets.length === 0) {
             return getEmptyStateMessage()
         }
         
+        // Priority 3: Search state vs normal navigation
         const searchActive = searchInput?.text?.length > 0
         if (searchActive) {
             return getSearchStateMessage()
@@ -140,6 +180,16 @@ PanelWindow {
         }
     }
 
+    /**
+     * Returns message for combining mode state
+     * Shows current combination status with snippet count and size information
+     * 
+     * @returns {string} Combining mode status message
+     */
+    function getCombiningModeMessage() {
+        return combiningController.statusMessage
+    }
+    
     /**
      * Returns message for empty snippet state
      * 
@@ -297,6 +347,28 @@ PanelWindow {
      */
     function handleEnterKey(event) {
         event.accepted = true
+        
+        // Check if we're in combining mode
+        if (combiningController.isCombiningMode) {
+            // In combining mode: ENTER executes combination
+            window.debugLog("⌨️ Enter key pressed in combining mode - executing combination")
+            
+            if (combiningController.combinedSnippets.length === 0) {
+                window.debugLog("⚠️ No snippets in combination to execute")
+                if (notifyUser) {
+                    notifyUser("Snippet Combination", "No snippets selected for combination", "normal")
+                }
+                return
+            }
+            
+            const success = combiningController.executeCombination()
+            if (!success) {
+                window.debugLog("❌ Combination execution failed")
+            }
+            return
+        }
+        
+        // Normal mode: ENTER selects current snippet
         if (window.hasSnippetsToDisplay && navigationController.visibleSnippetWindow.length > 0) {
             const selectedSnippet = navigationController.visibleSnippetWindow[navigationController.currentIndex]
             if (selectedSnippet) {
@@ -327,15 +399,24 @@ PanelWindow {
      */
     function handleEscapeKey(event) {
         event.accepted = true
+        
+        // Priority 1: Clear search text if it exists
         if (searchInput.text.length > 0) {
-            // First escape clears search
             window.debugLog("🧹 Escape pressed - clearing search text")
             searchInput.text = ""
-        } else {
-            // Second escape (or escape with empty search) exits
-            window.debugLog("🔴 Escape pressed - dismissing overlay")
-            Qt.quit()
+            return
         }
+        
+        // Priority 2: Exit combining mode if active
+        if (combiningController.isCombiningMode) {
+            window.debugLog("🔴 Escape pressed - exiting combining mode")
+            combiningController.exitCombiningMode()
+            return
+        }
+        
+        // Priority 3: Exit overlay (no search text, not in combining mode)
+        window.debugLog("🔴 Escape pressed - dismissing overlay")
+        Qt.quit()
     }
     
     /**
@@ -383,6 +464,57 @@ PanelWindow {
         if (window.hasSnippetsToDisplay) {
             window.debugLog("⬇️ Down arrow delegated from search field to NavigationController")
             navigationController.moveDown()
+        }
+    }
+    
+    /**
+     * Handles SPACE key press for snippet collection in combining mode
+     * Adds currently selected snippet to combination and clears search for next selection
+     * 
+     * @param {Object} event - Keyboard event object
+     * 
+     * Functionality:
+     * - Validates snippet availability and navigation state  
+     * - Adds current snippet to combination via CombiningModeController
+     * - Clears search field to allow searching for next snippet
+     * - Provides user feedback for successful addition or validation failures
+     * 
+     * Side effects:
+     * - Accepts keyboard event to prevent space from being added to search field
+     * - Calls combiningController.addSnippet() if valid snippet available
+     * - Clears searchInput.text after successful addition
+     * - Logs operation results with appropriate emoji markers
+     */
+    function handleSpaceKey(event) {
+        event.accepted = true
+        
+        if (!window.hasSnippetsToDisplay || navigationController.visibleSnippetWindow.length === 0) {
+            window.debugLog("⚠️ Space key pressed but no snippets available for combination")
+            return
+        }
+        
+        const selectedSnippet = navigationController.visibleSnippetWindow[navigationController.currentIndex]
+        if (!selectedSnippet) {
+            window.debugLog("⚠️ Space key pressed but no snippet selected")
+            return
+        }
+        
+        window.debugLog(`⌨️ Space key pressed - adding snippet to combination: "${selectedSnippet.title}"`)
+        
+        // Validate snippet before adding to combination (using existing validation)
+        if (!selectedSnippet || !selectedSnippet.title || !selectedSnippet.content) {
+            window.debugLog("❌ Space key - snippet validation failed")
+            return
+        }
+        
+        // Add snippet to combination
+        const success = combiningController.addSnippet(selectedSnippet)
+        if (success) {
+            // Clear search field for next snippet selection
+            searchInput.text = ""
+            window.debugLog(`✅ Snippet added to combination successfully`)
+        } else {
+            window.debugLog(`❌ Failed to add snippet to combination`)
         }
     }
     
@@ -708,6 +840,7 @@ PanelWindow {
             Keys.onUpPressed: function(event) { handleUpArrow(event) }
             Keys.onDownPressed: function(event) { handleDownArrow(event) }
             Keys.onEscapePressed: function(event) { handleEscapeKey(event) }
+            Keys.onSpacePressed: function(event) { handleSpaceKey(event) }
             
             Keys.onReturnPressed: function(event) { handleEnterKey(event) }
             Keys.onEnterPressed: function(event) { handleEnterKey(event) }

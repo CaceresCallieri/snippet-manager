@@ -24,7 +24,7 @@ A modular snippet manager for Arch Linux Hyprland systems built with QuickShell.
 - ✅ Overlay window appears immediately on command execution
 - ✅ Keyboard navigation (Up/Down arrows, Enter to select)
 - ✅ Mouse navigation (hover to select, click to choose)
-- ✅ Embedded static snippet data (5 test snippets)
+- ✅ JSON-based snippet loading with validation (16 test snippets)
 - ✅ Text injection via Hyprland native clipboard system with proper error handling
 - ✅ Cursor positioning within injected text using `[cursor]` markers
 - ✅ Auto-exit after selection or dismissal (Escape key)
@@ -33,32 +33,31 @@ A modular snippet manager for Arch Linux Hyprland systems built with QuickShell.
 **Current File Structure**:
 ```
 quickshell-snippet-manager/
-├── shell.qml                   # ✅ Main application (ShellRoot + LazyLoader)
+├── shell.qml                         # ✅ Main application (ShellRoot + LazyLoader)
 ├── ui/
-│   ├── OverlayWindow.qml       # ✅ Simplified UI presentation layer (350 lines)
-│   └── NavigationController.qml # ✅ Extracted navigation logic component (300 lines)
+│   ├── OverlayWindow.qml             # ✅ Main UI coordination and keyboard handling
+│   ├── NavigationController.qml      # ✅ Navigation logic component
+│   ├── CombiningModeController.qml   # ✅ Snippet combination state management
+│   ├── SnippetCombiner.qml           # ✅ Core combination business logic
+│   └── EmptyStateView.qml            # ✅ Empty state display component
 ├── utils/
-│   └── Constants.qml           # ✅ Centralized configuration singleton
-├── services/                   # (Legacy - not currently used)
-│   ├── DataLoader.qml          # (Replaced by embedded data)
-│   ├── TextInjection.qml       # (Replaced by inline Process)
-│   └── HyprlandService.qml     # (Simplified in shell.qml)
+│   ├── Constants.qml                 # ✅ Centralized configuration singleton
+│   └── FuzzySearch.qml               # ✅ Multi-criteria fuzzy search engine
 ├── data/
-│   └── snippets.json           # ✅ Active JSON data source for snippets
-├── inject-text.sh              # ✅ Hyprland-native text injection script with application detection
-└── test_injection.sh           # ✅ Testing utility
+│   └── snippets.json                 # ✅ JSON data source for snippets
+├── inject-text.sh                    # ✅ Hyprland-native text injection script
+└── test_injection.sh                 # ✅ Testing utility
 ```
 
-**Current Implementation Notes**:
-- JSON-based data loading from data/snippets.json file
-- LazyLoader pattern for memory efficiency
-- Direct Process integration for text injection
-- Robust UI using Column + Repeater (SnippetList.qml was removed as unused)
-- Centralized configuration via Constants.qml singleton
-- Auto-quit functionality for launcher-style behavior
-- HyprlandFocusGrab for reliable keyboard input capture
-- Conditional debug logging system with emoji markers
-- **Self-documenting variable names** - All UI and state variables use clear, descriptive names
+**Implementation Notes**:
+- **Modular QML Architecture**: Clean separation of concerns across 8 specialized components
+- **JSON-based Data Loading**: Real-time loading from data/snippets.json with comprehensive validation
+- **Fuzzy Search Engine**: Multi-criteria scoring with position weighting and adaptive filtering
+- **Snippet Combination System**: SPACE key workflow for collecting and combining multiple snippets
+- **Smart Keyboard Navigation**: Mode-aware ENTER/ESC behavior with progressive escape handling
+- **Size Validation**: 10KB security limits with user-friendly desktop notifications
+- **Performance Optimization**: 3-stage caching architecture eliminates binding loops
+- **Error Resilience**: Comprehensive validation and graceful degradation for all failure modes
 
 ## Key Requirements
 
@@ -102,8 +101,32 @@ User handles SUPER_L registration via Hyprland configuration.
 - Cursor position obtained via hyprctl
 - JSON data loaded from user config directory
 
+### Phase 2: Advanced Features ✅ COMPLETED
+**Goal**: Implement fuzzy search and snippet combination capabilities
+
+**Implemented Features**:
+- ✅ **Fuzzy Search System**: Multi-criteria relevance scoring with position-based weighting
+- ✅ **Snippet Combination**: SPACE key collection workflow for multi-snippet selection
+- ✅ **Smart Keyboard Handling**: Mode-aware ENTER/ESC behavior for normal vs combining modes
+- ✅ **Adaptive Filtering**: Intelligent result limiting based on search relevance scores
+- ✅ **Size Validation**: 10KB limit enforcement with user feedback via desktop notifications
+- ✅ **Modular Architecture**: Clean separation between business logic and UI components
+
+**Snippet Combination Workflow**:
+```
+1. Search "upd" → Navigate to snippet
+2. Press SPACE → Add to combination, clear search, enter combining mode
+3. Search "com" → Navigate to next snippet  
+4. Press SPACE → Add second snippet to combination
+5. Press ENTER → Combine snippets with newline separation and inject text
+```
+
+**Key Architecture Components**:
+- **CombiningModeController**: State management for multi-snippet collection
+- **SnippetCombiner**: Pure business logic for text combination and validation
+- **FuzzySearch**: Singleton providing relevance-based search with adaptive filtering
+
 ## Future Phases
-- **Phase 2**: Search functionality, enhanced backend architecture
 - **Phase 3**: Variable substitution, preview pane, usage statistics
 
 ## Success Criteria for Phase 1
