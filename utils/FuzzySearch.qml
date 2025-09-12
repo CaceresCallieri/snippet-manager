@@ -2,7 +2,7 @@ pragma Singleton
 import QtQuick
 
 /**
- * Fuzzy Search Singleton - Advanced relevance-based search for snippet manager
+ * Fuzzy Search Singleton - Relevance-based search for snippet manager
  * 
  * Implements multi-criteria scoring algorithm with position-based weighting
  * and field importance to provide intelligent search ranking.
@@ -10,8 +10,6 @@ import QtQuick
  * Key Features:
  * - Title matches weighted 3x higher than content matches
  * - Position-based scoring (prefix > word boundary > substring)
- * - Capital letter match bonuses
- * - Length normalization for better ranking
  * - Multi-word query support
  * - Basic typo tolerance
  * 
@@ -38,8 +36,6 @@ QtObject {
     readonly property real titleMultiplier: 3.0        // Title matches 3x more valuable
     readonly property real contentMultiplier: 1.0      // Content baseline multiplier
     
-    readonly property int bonusCapitalLetter: 50       // Bonus for capital letter matches
-    readonly property int bonusLengthNormalization: 100 // Bonus for shorter strings with matches
     
     // Filtering thresholds for relative score filtering
     readonly property real relativeScoreThreshold: 0.3  // Show results within 30% of top score
@@ -152,9 +148,9 @@ QtObject {
     // ============================================================================
     
     /**
-     * Calculate comprehensive relevance score for a snippet against search term
+     * Calculate relevance score for a snippet against search term
      * 
-     * Combines multiple scoring criteria with field weighting to produce
+     * Combines title and content match scores with field weighting to produce
      * a final relevance score for ranking purposes.
      * 
      * @param {Object} snippet - Snippet with title and content properties
@@ -164,8 +160,6 @@ QtObject {
      * Scoring components:
      * - Title match score (weighted 3x)
      * - Content match score (baseline weight)
-     * - Length normalization bonus
-     * - Capital letter match bonuses
      */
     function calculateRelevanceScore(snippet, normalizedQuery) {
         if (!snippet || !snippet.title || !snippet.content) {
@@ -176,14 +170,8 @@ QtObject {
         var titleScore = calculateFieldScore(snippet.title, normalizedQuery) * titleMultiplier
         var contentScore = calculateFieldScore(snippet.content, normalizedQuery) * contentMultiplier
         
-        // Base score is the sum of field scores
-        var totalScore = titleScore + contentScore
-        
-        // Apply bonuses
-        totalScore += calculateLengthBonus(snippet, normalizedQuery)
-        totalScore += calculateCapitalLetterBonus(snippet, normalizedQuery)
-        
-        return Math.round(totalScore)
+        // Return total score without unnecessary complexity
+        return Math.round(titleScore + contentScore)
     }
     
     /**
@@ -290,74 +278,4 @@ QtObject {
         return matchRatio >= 0.7  // 70% character coverage required
     }
     
-    /**
-     * Calculate length normalization bonus
-     * 
-     * Shorter strings with matches should rank higher than longer ones,
-     * all else being equal.
-     * 
-     * @param {Object} snippet - Snippet object
-     * @param {string} query - Search query
-     * @returns {number} Length normalization bonus
-     */
-    function calculateLengthBonus(snippet, query) {
-        var titleLength = snippet.title.length
-        var contentLength = snippet.content.length
-        var avgLength = (titleLength + contentLength) / 2
-        
-        // Shorter content gets bonus (up to 100 points)
-        var maxLength = 200  // Reasonable max for normalization
-        var bonus = Math.max(0, bonusLengthNormalization * (1 - avgLength / maxLength))
-        
-        return Math.round(bonus)
-    }
-    
-    /**
-     * Calculate bonus for capital letter matches
-     * 
-     * Matches that align with capital letters often represent more
-     * semantically important matches (acronyms, proper nouns, etc.)
-     * 
-     * @param {Object} snippet - Snippet object
-     * @param {string} query - Search query (lowercase)
-     * @returns {number} Capital letter match bonus
-     */
-    function calculateCapitalLetterBonus(snippet, query) {
-        var bonus = 0
-        
-        // Check title for capital letter matches
-        bonus += findCapitalMatches(snippet.title, query)
-        
-        // Check content for capital letter matches (lower weight)
-        bonus += Math.round(findCapitalMatches(snippet.content, query) * 0.5)
-        
-        return bonus
-    }
-    
-    /**
-     * Find capital letter alignment matches in text
-     * 
-     * @param {string} text - Original text with capitalization
-     * @param {string} query - Lowercase query
-     * @returns {number} Bonus points for capital alignments
-     */
-    function findCapitalMatches(text, query) {
-        var matches = 0
-        var lowerText = text.toLowerCase()
-        
-        for (var i = 0; i < text.length - query.length + 1; i++) {
-            var textSegment = lowerText.substr(i, query.length)
-            
-            if (textSegment === query) {
-                // Check if this match aligns with capital letters
-                for (var j = 0; j < query.length; j++) {
-                    if (text[i + j] !== lowerText[i + j]) {  // Capital letter
-                        matches++
-                    }
-                }
-            }
-        }
-        
-        return matches * bonusCapitalLetter
-    }
 }
