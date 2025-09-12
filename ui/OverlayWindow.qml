@@ -94,17 +94,8 @@ PanelWindow {
      */
     property bool hasSnippetsToDisplay: processedSnippets.length > 0
     
-    // Performance measurement (simplified after removing over-engineered caching)
-    property int processingCalculationCount: 0
-    
     signal snippetSelected(var snippet)
     signal dismissed()
-    
-    // Performance monitoring handler (simplified after removing over-engineered caching)
-    onProcessedSnippetsChanged: {
-        processingCalculationCount++
-        window.debugLog(`🔄 Processing recalculated (${processingCalculationCount} times) - ${processedSnippets.length} results`)
-    }
     
     /**
      * Generates title text for the header - always "Snippet Manager"
