@@ -662,18 +662,29 @@ The search highlighting function includes XSS protection using HTML escaping. Cr
 ### Desktop Notification Strategy
 For critical errors and warnings that users need to be aware of, implement desktop notifications using `notify-send`:
 
-**Implementation Pattern:**
+**Implementation Pattern with Throttling:**
 ```javascript
-// In shell.qml for critical errors
+// In shell.qml - notification system with spam prevention
 function notifyUser(title, message, urgency = "normal") {
+    const notificationKey = title + "|" + message
+    
+    // Always allow critical notifications (never throttle important errors)
+    if (urgency !== "critical") {
+        notificationCounts[notificationKey] = (notificationCounts[notificationKey] || 0) + 1
+        // Throttle after 2 instances of same non-critical notification
+        if (notificationCounts[notificationKey] > 2) return
+    }
+    
     const command = ["notify-send", "-u", urgency, title, message]
     Quickshell.execDetached(command)
 }
-
-// Usage examples:
-// notifyUser("Snippet Manager", "No snippets found - check data/snippets.json", "low")
-// notifyUser("Snippet Manager Error", "Failed to load snippets file", "critical")
 ```
+
+**Throttling Behavior:**
+- **Critical notifications**: Always sent (no throttling for important errors)
+- **Normal/Low notifications**: Limited to 2 instances per unique title+message combination
+- **Prevents spam**: Repeated error conditions don't flood desktop notifications
+- **Memory efficient**: Simple counter-based tracking without cleanup overhead
 
 **Notification Categories:**
 - **Critical**: File system errors, JSON parsing failures, security violations

@@ -12,6 +12,9 @@ ShellRoot {
     property bool isDebugLoggingEnabled: true
     property var loadedValidSnippets: []
     
+    // Notification throttling - tracks count per unique notification
+    property var notificationCounts: ({})
+    
     /**
      * Conditionally logs debug messages with emoji markers
      * Only outputs when debug mode is enabled to keep production output clean.
@@ -29,22 +32,45 @@ ShellRoot {
     }
     
     /**
-     * Sends desktop notifications to user via notify-send command
+     * Sends desktop notifications to user via notify-send command with throttling
      * Used for critical errors, warnings, and status updates that user needs to see.
+     * Implements simple counter-based throttling to prevent notification spam.
      * 
      * @param {string} title - Notification title (appears in notification header)
      * @param {string} message - Notification message body
      * @param {string} urgency - Urgency level: "low", "normal", or "critical" (default: "normal")
      * 
+     * Throttling behavior:
+     * - Critical notifications: Always sent (no throttling for important errors)
+     * - Normal/Low notifications: Limited to 2 instances per unique title+message
+     * - Prevents notification spam during repeated error conditions
+     * 
      * Side effects:
      * - Executes notify-send command via Quickshell.execDetached
+     * - Updates notificationCounts tracking object
      * - Logs error to console if notification sending fails
      * - No-op if notify-send command is not available on system
      */
     function notifyUser(title, message, urgency = "normal") {
+        // Create unique key for this notification
+        const notificationKey = title + "|" + message
+        
+        // Always allow critical notifications (important errors should never be suppressed)
+        if (urgency !== "critical") {
+            // Track count for non-critical notifications
+            notificationCounts[notificationKey] = (notificationCounts[notificationKey] || 0) + 1
+            
+            // Throttle after 2 instances of the same notification
+            if (notificationCounts[notificationKey] > 2) {
+                root.debugLog(`🔇 Notification throttled (${notificationCounts[notificationKey]}x): ${title} - ${message}`)
+                return
+            }
+        }
+        
         try {
             const command = ["notify-send", "-u", urgency, title, message]
             Quickshell.execDetached(command)
+            root.debugLog(`🔔 Notification sent: ${title} - ${message} (urgency: ${urgency})`)
         } catch (error) {
             console.error("❌ Failed to send notification:", error)
         }
