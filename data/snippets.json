@@ -1,7 +1,7 @@
 [
 	{
 		"title": "Update CLAUDE.md file",
-		"content": "Update the CLAUDE.md file only if needed, with relevant information that could be useful for future developmet, try to keep it brief, avoid date logging."
+		"content": "Update the CLAUDE.md file *ONLY IF NEEDED*, with relevant information that could be useful for future developmet, keep it brief, avoid date logging."
 	},
 	{
 		"title": "Commit progress",
@@ -32,35 +32,11 @@
 		"content": "Task: Create a structured TODO system for code quality improvements with maximum future agent efficiency.\n\nFolder Structure:\nTODOS/code-quality-improvements/\n├── [task files]\n└── completed/\n\nFilename Convention:\n[P{1-3}][{Type}][B:{Benefit}|C:{Complexity}]{task-name}.md\n\nExample:\n[P2][Enhancement][B:Medium|C:Low]configuration-override-security.md\n\nTypes: Enhancement, Fix, Security, Performance, Polish\nBenefits: Minimal, Low, Medium, High, Highest\n\nComplexity Scale:\n- Quickfix: Single file, 5-20 lines, high certainty of one-try success, simple logic\n- Low: Single file or new simple file, 20-100 lines, straightforward logic, low breaking risk\n- Medium: 1-3 files, 100-300 lines, moderate logic complexity, some integration points, medium breaking risk\n- High: Multiple files, 300+ lines, complex logic/algorithms, multiple integration points, higher breaking risk\n- Highest: Major refactoring, complex algorithms, cross-system dependencies, high breaking risk\n\nFile Template:\n# [Title]\n## Priority: P{X} | Type: {Type} | Benefit: {Level} | Complexity: {Level}\n\n## Problem Description\n[Clear problem statement with context]\n\n## Implementation Plan\n[Step-by-step technical approach]\n\n## File Locations\n[Specific files and line numbers from codebase]\n\n## Success Criteria\n[Concrete completion indicators]\n\n## Dependencies\n[Prerequisites: format as [Depends-On: taskname] if applicable]\n\n## Code Examples\n[Relevant code snippets showing current state and proposed changes]\n\n## Reminder\nMove this file to TODOS/code-quality-improvements/completed/ when implementation is finished."
 	},
 	{
-		"title": "Snippet number 6",
-		"content": "This is the sixth snippet for testing purposes"
+		"title": "Just answer",
+		"content": "Limit yourself to just answering the question, do not start implementing or making changes"
 	},
 	{
-		"title": "Snippet number 7",
-		"content": "This is the seventh snippet - should NOT be displayed"
-	},
-	{
-		"title": "Function Template (cursor positioning)",
-		"content": "function myFunction() {\n    [cursor]\n    return true;\n}"
-	},
-	{
-		"title": "If Statement Template",
-		"content": "if ([cursor]) {\n    // TODO: implement logic\n}"
-	},
-	{
-		"title": "HTML Form Field",
-		"content": "<input type=\"text\" name=\"[cursor]\" placeholder=\"Enter value\" />"
-	},
-	{
-		"title": "Email Template",
-		"content": "Hi [cursor],\n\nI hope this email finds you well.\n\nBest regards,\nYour Name"
-	},
-	{
-		"title": "CSS Class Template",
-		"content": ".my-class {\n    [cursor]: value;\n    display: block;\n}"
-	},
-	{
-		"title": "Simple Fill-in-blank",
-		"content": "The quick brown [cursor] jumps over the lazy dog."
+		"title": "Explain and review task",
+		"content": "Explain the issue/task in detail and document the benefits and possible drawbacks(if any).\nMake sure the task is still relevant, and that the proposed solution (if any) is the best way to solve it, avoid over-engineering issues."
 	}
 ]
