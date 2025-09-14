@@ -623,6 +623,15 @@ PanelWindow {
         border.width: Constants.borderWidth
         radius: Constants.borderRadius
         
+        // Top-level keyboard handler for global shortcuts
+        Keys.onPressed: function(event) {
+            if (event.key === Qt.Key_Q && (event.modifiers & Qt.ControlModifier)) {
+                event.accepted = true
+                window.debugLog("🔴 Ctrl+Q pressed - quitting application")
+                Qt.quit()
+            }
+        }
+        
         // Header with title and count components stacked vertically
         Column {
             id: header
@@ -800,8 +809,8 @@ PanelWindow {
             anchors.margins: Constants.mainMargins
             height: Constants.instructionsHeight
             text: window.hasSnippetsToDisplay ? 
-                  "↑↓ Navigate • Enter Select • Esc Clear/Cancel" : 
-                  "Esc Cancel • Add snippets to data/snippets.json"
+                  "↑↓ Navigate • Enter Select • Esc Clear/Cancel • Ctrl+Q Quit" : 
+                  "Esc Cancel • Ctrl+Q Quit • Add snippets to data/snippets.json"
             color: Constants.colors.subtitleText
             font.pixelSize: Constants.instructionsFontSize
             horizontalAlignment: Text.AlignHCenter

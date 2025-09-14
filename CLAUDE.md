@@ -73,6 +73,7 @@ quickshell-snippet-manager/
 - `Up Arrow`: Move selection up (wraps to bottom when at top)
 - `Down Arrow`: Move selection down (wraps to top when at bottom)
 - `Enter`: Select current snippet and inject text
+- `Ctrl+Q`: Quit application (alternative to Escape)
 
 ### Global Shortcut
 User handles SUPER_L registration via Hyprland configuration.
