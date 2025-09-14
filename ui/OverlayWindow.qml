@@ -464,9 +464,12 @@ PanelWindow {
     }
     
     
-    // Position overlay at fixed screen percentage (1/6 from top)
-    // Note: Cursor positioning not currently implemented for overlay layer
-    margins.top: screen.height * Constants.overlayTopOffsetFraction
+    // Anchor overlay to bottom center of screen without exclusion zone
+    anchors {
+        bottom: true
+    }
+    exclusionMode: ExclusionMode.Ignore
+    margins.bottom: 42
     
     implicitWidth: Constants.overlayWidth
     implicitHeight: Constants.overlayHeight
@@ -615,7 +618,7 @@ PanelWindow {
     
     Rectangle {
         anchors.fill: parent
-        color: "#1a1a1a"
+        color: Qt.rgba(0.109, 0.109, 0.118, Constants.backgroundOpacity) // #1c1c1e with 60% opacity
         border.color: Constants.colors.mainBorder
         border.width: Constants.borderWidth
         radius: Constants.borderRadius
@@ -636,7 +639,7 @@ PanelWindow {
                 anchors.right: parent.right
                 height: Constants.titleHeight
                 text: getTitleText()
-                color: "#ffffff"
+                color: Constants.colors.headerText
                 font.pixelSize: Constants.titleFontSize
                 font.bold: true
                 horizontalAlignment: Text.AlignHCenter
@@ -650,7 +653,7 @@ PanelWindow {
                 anchors.right: parent.right
                 height: Constants.countHeight
                 text: getCountText()
-                color: "#cccccc"
+                color: Constants.colors.subtitleText
                 font.pixelSize: Constants.countFontSize
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
@@ -740,12 +743,14 @@ PanelWindow {
                     model: navigationController.visibleSnippetWindow
                     
                     Rectangle {
+                        id: snippetButton
                         width: snippetColumn.width
                         height: Constants.snippetItemHeight
                         color: index === navigationController.currentIndex ? Constants.colors.selectedBackground : Constants.colors.unselectedBackground
                         border.color: index === navigationController.currentIndex ? Constants.colors.selectedBorder : Constants.colors.unselectedBorder
                         border.width: Constants.borderWidth
                         radius: Constants.itemBorderRadius
+                        
                         
                         // Title with highlighting
                         Text {
@@ -755,7 +760,7 @@ PanelWindow {
                             anchors.margins: Constants.textMargins
                             text: modelData.highlightedTitle || "Untitled"
                             textFormat: Text.RichText  // Enable HTML formatting
-                            color: index === navigationController.currentIndex ? "#ffffff" : "#cccccc"
+                            color: index === navigationController.currentIndex ? Constants.colors.selectedText : Constants.colors.unselectedText
                             font.pixelSize: Constants.snippetTitleFontSize
                             font.bold: false
                             elide: Text.ElideRight
@@ -797,7 +802,7 @@ PanelWindow {
             text: window.hasSnippetsToDisplay ? 
                   "↑↓ Navigate • Enter Select • Esc Clear/Cancel" : 
                   "Esc Cancel • Add snippets to data/snippets.json"
-            color: "#aaaaaa"
+            color: Constants.colors.subtitleText
             font.pixelSize: Constants.instructionsFontSize
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter

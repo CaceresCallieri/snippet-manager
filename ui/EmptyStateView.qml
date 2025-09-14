@@ -26,7 +26,7 @@ Item {
                     return "No Results"
                 }
             }
-            color: "#ffffff"
+            color: Constants.colors.headerText
             font.pixelSize: Constants.headerFontSize
             font.bold: true
             horizontalAlignment: Text.AlignHCenter
@@ -44,7 +44,7 @@ Item {
                     return "No snippets found"
                 }
             }
-            color: "#cccccc"
+            color: Constants.colors.subtitleText
             font.pixelSize: Constants.snippetFontSize
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap

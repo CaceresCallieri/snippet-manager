@@ -5,7 +5,7 @@
 	},
 	{
 		"title": "Commit progress",
-		"content": "Commit the progress made, rembember to omit the claude code references in the commit message"
+		"content": "Commit the progress made using Conventional Commit style:\n<type>[scope]: <description>\n[optional body]\n[optional footer(s)].\nRembember to omit the claude code references in the commit message"
 	},
 	{
 		"title": "Move task file to completed folder",
