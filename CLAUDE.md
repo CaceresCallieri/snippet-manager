@@ -33,6 +33,7 @@ A modular snippet manager for Arch Linux Hyprland systems built with QuickShell.
 **Current File Structure**:
 ```
 quickshell-snippet-manager/
+├── snippet-manager-wrapper.sh        # ✅ Event-driven wrapper script (main entry point)
 ├── shell.qml                         # ✅ Main application (ShellRoot + LazyLoader)
 ├── ui/
 │   ├── OverlayWindow.qml             # ✅ Main UI coordination and keyboard handling
@@ -50,6 +51,7 @@ quickshell-snippet-manager/
 ```
 
 **Implementation Notes**:
+- **Event-Driven Wrapper Architecture**: Deterministic Hyprland event system eliminates timing issues
 - **Modular QML Architecture**: Clean separation of concerns across 8 specialized components
 - **JSON-based Data Loading**: Real-time loading from data/snippets.json with comprehensive validation
 - **Fuzzy Search Engine**: Multi-criteria scoring with position weighting and adaptive filtering
@@ -307,6 +309,15 @@ Component {
 ```
 
 **Guidelines**: Always use passed `debugLog` property, never create local wrapper functions, consistent emoji markers for categorization.
+
+### Wrapper Script Logging Architecture
+**Critical Design Pattern**: All logging output must go to stderr, never stdout, to prevent interference with text injection.
+
+**Implementation**: The `log()` function in `snippet-manager-wrapper.sh` sends all levels (INFO, WARN, ERROR, DEBUG) to stderr using `>&2` redirection. This ensures:
+- User experience: Only snippet content appears as injected text
+- Debug visibility: Debug messages appear in terminal without contaminating injection
+- Clean separation: stdout contains only data, stderr contains only logging
+- Performance: Eliminates stdout/stderr mixing that causes injection delays
 
 ## Development Resources
 

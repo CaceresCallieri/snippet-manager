@@ -12,8 +12,7 @@ if [[ ${#text} -gt 10000 ]]; then
     exit 1
 fi
 
-# Allow QuickShell to exit completely and focus to stabilize
-sleep 0.25
+# Note: Wrapper architecture provides deterministic timing - no delay needed
 
 # Enhanced cursor positioning support and newline handling
 # Check for [cursor] marker and calculate positioning

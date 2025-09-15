@@ -217,43 +217,50 @@ ShellRoot {
             
             onSnippetSelected: function(snippet) {
                 root.debugLog("📋 Selected snippet: " + snippet.title)
-                root.debugLog("🚀 Launching detached script with text argument...")
+                root.debugLog("🚀 Dispatching Hyprland event with snippet title...")
                 
                 // Validate snippet data before processing
                 if (!Validation.isValidSnippetStructure(snippet)) {
-                    console.error("❌ Invalid snippet data - cannot inject text")
-                    root.notifyUser("Snippet Manager Error", "Invalid snippet data - text injection failed", "critical")
+                    console.error("❌ Invalid snippet data - cannot dispatch event")
+                    root.notifyUser("Snippet Manager Error", "Invalid snippet data - event dispatch failed", "critical")
                     Qt.quit()
                     return
                 }
                 
                 try {
-                    // Use execDetached with command array (like DesktopAction.command)
-                    const scriptPath = Qt.resolvedUrl("inject-text.sh").toString().replace("file://", "")
-                    
-                    // Validate script path exists
-                    if (!scriptPath || scriptPath.length === 0) {
-                        throw new Error("Script path could not be resolved")
-                    }
-                    
-                    var command = [scriptPath, snippet.content]
-                    root.debugLog("🔧 Executing command: " + JSON.stringify(command))
+                    // Dispatch Hyprland event with snippet title only
+                    const eventData = "SNIPPET_SELECTED:" + snippet.title
+                    var command = ["hyprctl", "dispatch", "event", eventData]
+                    root.debugLog("🔧 Dispatching event: " + eventData)
                     
                     Quickshell.execDetached(command)
-                    root.debugLog("✅ Text injection command launched successfully")
+                    root.debugLog("✅ Hyprland event dispatched successfully")
                 } catch (error) {
-                    console.error("❌ Failed to execute text injection script:", error)
+                    console.error("❌ Failed to dispatch Hyprland event:", error)
                     root.notifyUser("Snippet Manager Error", 
-                                  "Failed to inject text: " + error.message, 
+                                  "Failed to dispatch event: " + error.message, 
                                   "critical")
+                    
+                    // TODO: Fallback to direct injection if event dispatch fails
+                    // For now, we exit gracefully to prevent hanging UI
                 }
                 
-                // Exit immediately (even on error - user should be notified via notification)
+                // Exit immediately - wrapper will handle injection via event
                 Qt.quit()
             }
             
             onDismissed: {
                 root.debugLog("❌ Snippet manager dismissed")
+                
+                try {
+                    // Send cancellation event to wrapper
+                    Quickshell.execDetached(["hyprctl", "dispatch", "event", "SNIPPET_CANCELLED"])
+                    root.debugLog("✅ Cancellation event dispatched")
+                } catch (error) {
+                    console.error("❌ Failed to dispatch cancellation event:", error)
+                    // Don't show notification for cancellation failures - just exit
+                }
+                
                 Qt.quit()
             }
         }
