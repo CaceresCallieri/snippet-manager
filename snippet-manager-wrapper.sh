@@ -125,7 +125,7 @@ combine_snippets() {
         # Lookup individual snippet content
         if snippet_content=$(lookup_snippet "$title"); then
             if [ $snippet_count -gt 0 ]; then
-                combined_content+="\n"  # Add newline between snippets
+                combined_content+=$'\n'  # Add newline between snippets
             fi
             combined_content+="$snippet_content"
             snippet_count=$((snippet_count + 1))
