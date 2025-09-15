@@ -116,29 +116,6 @@ Item {
     // INTERNAL COMPONENTS
     // ============================================================================
     
-    /**
-     * Core combination logic component
-     * Handles text processing, validation, and final combination
-     */
-    SnippetCombiner {
-        id: combiner
-        
-        onCombinationReady: function(combinedText) {
-            // Create a synthetic snippet object for the combined result
-            const combinedSnippet = {
-                title: `Combined Snippet (${controller.combinedSnippets.length} parts)`,
-                content: combinedText
-            }
-            
-            controller.debugLog(`✅ Combination ready: ${combinedText.length} characters`)
-            controller.snippetReady(combinedSnippet)
-        }
-        
-        onCombinationFailed: function(error, errorType) {
-            console.error(`❌ Combination failed: ${error} (${errorType})`)
-            controller.combinationFailed(error, errorType)
-        }
-    }
     
     // ============================================================================
     // DEBUG LOGGING
@@ -183,17 +160,24 @@ Item {
             return false
         }
         
-        if (combiner.isDuplicateSnippet(combinedSnippets, snippet)) {
-            const error = `Snippet "${snippet.title}" is already in combination`
-            debugLog(`⚠️ ${error}`)
-            additionFailed(error, "duplicate")
-            return false
+        // Check for duplicate snippet by title
+        for (let i = 0; i < combinedSnippets.length; i++) {
+            if (combinedSnippets[i].title === snippet.title) {
+                const error = `Snippet "${snippet.title}" is already in combination`
+                debugLog(`⚠️ ${error}`)
+                additionFailed(error, "duplicate")
+                return false
+            }
         }
         
-        if (!combiner.canAddSnippet(combinedSnippets, snippet)) {
-            const currentSize = combiner.calculateCombinedSize(combinedSnippets)
-            const newSize = currentSize + snippet.content.length
-            const error = `Adding snippet would exceed size limit: ${newSize} > 10000`
+        // Check size limit (calculate current size + new snippet)
+        let currentSize = 0
+        for (let i = 0; i < combinedSnippets.length; i++) {
+            currentSize += combinedSnippets[i].content.length
+        }
+        const newSize = currentSize + snippet.content.length
+        if (newSize > Constants.validation.maxContentLength) {
+            const error = `Adding snippet would exceed size limit: ${newSize} > ${Constants.validation.maxContentLength}`
             debugLog(`⚠️ ${error}`)
             additionFailed(error, "size_limit")
             return false
@@ -244,11 +228,29 @@ Item {
         
         debugLog(`🔄 Executing combination of ${combinedSnippets.length} snippets...`)
         
-        // Delegate to SnippetCombiner for processing
-        const result = combiner.combineSnippets(combinedSnippets)
+        // Basic validation - ensure all snippets have valid structure
+        for (let i = 0; i < combinedSnippets.length; i++) {
+            if (!Validation.isValidSnippetStructure(combinedSnippets[i])) {
+                const error = `Invalid snippet structure in combination at index ${i}`
+                debugLog(`❌ ${error}`)
+                combinationFailed(error, "validation_failure")
+                return false
+            }
+        }
         
-        // Result handling is done via combiner signals (onCombinationReady/onCombinationFailed)
-        return result.length > 0
+        // Create combined snippet object with titles array for wrapper script
+        const combinedSnippet = {
+            title: `Combined Snippet (${combinedSnippets.length} parts)`,
+            content: "", // Not used - wrapper will handle combination
+            isCombined: true,
+            titles: combinedSnippets.map(s => s.title)
+        }
+        
+        debugLog(`✅ Combination ready: ${combinedSnippets.length} snippets`)
+        debugLog(`🔗 Combined titles: ${combinedSnippet.titles.join(", ")}`)
+        snippetReady(combinedSnippet)
+        
+        return true
     }
     
     /**
@@ -352,7 +354,11 @@ Item {
      * Called whenever combinedSnippets array changes
      */
     function updateCharacterCount() {
-        combinedCharacterCount = combiner.calculateCombinedSize(combinedSnippets)
+        let totalSize = 0
+        for (let i = 0; i < combinedSnippets.length; i++) {
+            totalSize += combinedSnippets[i].content.length
+        }
+        combinedCharacterCount = totalSize
     }
     
     // ============================================================================

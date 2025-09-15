@@ -105,6 +105,48 @@ lookup_snippet() {
     fi
 }
 
+# Function to combine multiple snippets by title
+combine_snippets() {
+    local titles_string="$1"
+    
+    log "DEBUG" "🔗 Starting snippet combination for: '$titles_string'"
+    
+    # Split comma-separated titles into array
+    IFS=',' read -ra titles <<< "$titles_string"
+    local combined_content=""
+    local snippet_count=0
+    
+    for title in "${titles[@]}"; do
+        # Trim whitespace from title
+        title=$(echo "$title" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        
+        log "DEBUG" "🔍 Looking up snippet ${snippet_count}: '$title'"
+        
+        # Lookup individual snippet content
+        if snippet_content=$(lookup_snippet "$title"); then
+            if [ $snippet_count -gt 0 ]; then
+                combined_content+="\n"  # Add newline between snippets
+            fi
+            combined_content+="$snippet_content"
+            snippet_count=$((snippet_count + 1))
+            log "DEBUG" "✅ Added snippet ${snippet_count}: '$title' (${#snippet_content} chars)"
+        else
+            log "ERROR" "❌ Failed to find snippet in combination: '$title'"
+            notify_user "Snippet Manager Error" "Failed to find snippet: $title" "critical"
+            return 1
+        fi
+    done
+    
+    if [ $snippet_count -eq 0 ]; then
+        log "ERROR" "❌ No valid snippets found in combination"
+        return 1
+    fi
+    
+    log "INFO" "✅ Combined ${snippet_count} snippets (total: ${#combined_content} characters)"
+    echo "$combined_content"
+    return 0
+}
+
 # Function to send desktop notification
 notify_user() {
     local title="$1"
@@ -203,6 +245,30 @@ handle_event() {
             else
                 log "ERROR" "❌ Lookup failed for: '$selected_title'"
                 notify_user "Snippet Manager Error" "Failed to find snippet: $selected_title" "critical"
+                echo "FAILED" > "/tmp/snippet-manager-result-$$"
+            fi
+            ;;
+        custom\>\>COMBINED_SNIPPETS_SELECTED:*)
+            # Extract comma-separated titles from event
+            local selected_titles="${event#custom>>COMBINED_SNIPPETS_SELECTED:}"
+            
+            log "INFO" "🔗 Combined snippets selected: '$selected_titles'"
+            
+            # Combine snippets using wrapper logic
+            log "DEBUG" "🚀 Starting snippet combination..."
+            if combined_content=$(combine_snippets "$selected_titles"); then
+                log "DEBUG" "✅ Combination successful, content length: ${#combined_content}"
+                # Inject combined content
+                log "DEBUG" "🚀 Starting combined text injection..."
+                if inject_text "$combined_content"; then
+                    log "INFO" "🎉 Combined snippet injection completed successfully"
+                    echo "SUCCESS" > "/tmp/snippet-manager-result-$$"
+                else
+                    log "ERROR" "❌ Combined injection failed for: '$selected_titles'"
+                    echo "FAILED" > "/tmp/snippet-manager-result-$$"
+                fi
+            else
+                log "ERROR" "❌ Combination failed for: '$selected_titles'"
                 echo "FAILED" > "/tmp/snippet-manager-result-$$"
             fi
             ;;

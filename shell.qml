@@ -217,7 +217,6 @@ ShellRoot {
             
             onSnippetSelected: function(snippet) {
                 root.debugLog("📋 Selected snippet: " + snippet.title)
-                root.debugLog("🚀 Dispatching Hyprland event with snippet title...")
                 
                 // Validate snippet data before processing
                 if (!Validation.isValidSnippetStructure(snippet)) {
@@ -228,13 +227,30 @@ ShellRoot {
                 }
                 
                 try {
-                    // Dispatch Hyprland event with snippet title only
-                    const eventData = "SNIPPET_SELECTED:" + snippet.title
-                    var command = ["hyprctl", "dispatch", "event", eventData]
-                    root.debugLog("🔧 Dispatching event: " + eventData)
-                    
-                    Quickshell.execDetached(command)
-                    root.debugLog("✅ Hyprland event dispatched successfully")
+                    // Check if this is a combined snippet using the isCombined flag
+                    if (snippet.isCombined && snippet.titles) {
+                        root.debugLog("🔗 Combined snippet detected - using individual titles...")
+                        
+                        // Use the titles array from the combined snippet
+                        const titlesString = snippet.titles.join(",")
+                        
+                        // Dispatch combined snippets event with comma-separated titles
+                        const eventData = "COMBINED_SNIPPETS_SELECTED:" + titlesString
+                        var command = ["hyprctl", "dispatch", "event", eventData]
+                        root.debugLog("🔧 Dispatching combined event: " + eventData)
+                        
+                        Quickshell.execDetached(command)
+                        root.debugLog("✅ Combined snippets event dispatched successfully")
+                    } else {
+                        // Single snippet - use existing logic
+                        root.debugLog("🚀 Dispatching single snippet event...")
+                        const eventData = "SNIPPET_SELECTED:" + snippet.title
+                        var command = ["hyprctl", "dispatch", "event", eventData]
+                        root.debugLog("🔧 Dispatching event: " + eventData)
+                        
+                        Quickshell.execDetached(command)
+                        root.debugLog("✅ Single snippet event dispatched successfully")
+                    }
                 } catch (error) {
                     console.error("❌ Failed to dispatch Hyprland event:", error)
                     root.notifyUser("Snippet Manager Error", 

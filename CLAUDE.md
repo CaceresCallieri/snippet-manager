@@ -55,7 +55,7 @@ quickshell-snippet-manager/
 - **Modular QML Architecture**: Clean separation of concerns across 8 specialized components
 - **JSON-based Data Loading**: Real-time loading from data/snippets.json with comprehensive validation
 - **Fuzzy Search Engine**: Multi-criteria scoring with position weighting and adaptive filtering
-- **Snippet Combination System**: SPACE key workflow for collecting and combining multiple snippets
+- **Snippet Combination System**: Wrapper-based combination with title-only events for clean architecture
 - **Smart Keyboard Navigation**: Mode-aware ENTER/ESC behavior with progressive escape handling
 - **Size Validation**: 10KB security limits with user-friendly desktop notifications
 - **Performance Optimization**: 3-stage caching architecture eliminates binding loops
@@ -318,6 +318,17 @@ Component {
 - Debug visibility: Debug messages appear in terminal without contaminating injection
 - Clean separation: stdout contains only data, stderr contains only logging
 - Performance: Eliminates stdout/stderr mixing that causes injection delays
+
+### Combination Architecture
+**Design Pattern**: Title-only event system with wrapper-based combination logic eliminates virtual snippet issues.
+
+**Event Flow**:
+- Single snippet: `SNIPPET_SELECTED:title` → wrapper JSON lookup → inject
+- Combined snippets: `COMBINED_SNIPPETS_SELECTED:title1,title2` → wrapper lookup all → combine → inject
+
+**Benefits**: Consistent data layer (all JSON operations in wrapper), no virtual snippet JSON lookup errors, simplified QML (UI focuses on interaction), centralized validation and error handling.
+
+**Key Implementation**: `CombiningModeController` emits titles array instead of combined text, wrapper `combine_snippets()` function handles all text processing.
 
 ## Development Resources
 

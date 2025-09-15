@@ -38,5 +38,9 @@
 	{
 		"title": "Explain and review task",
 		"content": "Explain the issue/task in detail and document the benefits and possible drawbacks(if any).\nMake sure the task is still relevant, and that the proposed solution (if any) is the best way to solve it, avoid over-engineering issues."
+	},
+	{
+		"title": "Test task",
+		"content": "Remember to properly test the implementation of the task to make sure that the code is working as expected and that there are no regressions"
 	}
 ]
