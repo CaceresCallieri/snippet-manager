@@ -437,7 +437,7 @@ main() {
     local elapsed=0
     
     # Monitor for completion
-    while [ $elapsed -lt $timeout_seconds ]; do
+    while [ $elapsed -lt $((timeout_seconds * 10)) ]; do
         # Check if event listener signaled completion
         if [ -f "$result_file" ]; then
             local result=$(cat "$result_file" 2>/dev/null)
