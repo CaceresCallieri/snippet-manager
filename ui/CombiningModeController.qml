@@ -94,9 +94,9 @@ Item {
     
     /**
      * Emitted when snippets are successfully combined and ready for injection
-     * @param {Object} combinedSnippet - Combined snippet object with title/content
+     * @param {Array<string>} titles - Array of snippet titles to combine
      */
-    signal snippetReady(var combinedSnippet)
+    signal combineSnippets(var titles)
     
     /**
      * Emitted when snippet addition fails due to validation errors
@@ -215,7 +215,7 @@ Item {
      * 
      * Side effects:
      * - Triggers SnippetCombiner processing
-     * - May emit snippetReady or combinationFailed signals via combiner
+     * - May emit combineSnippets or combinationFailed signals via combiner
      * - Logs combination attempt and status information
      */
     function executeCombination() {
@@ -238,17 +238,12 @@ Item {
             }
         }
         
-        // Create combined snippet object with titles array for wrapper script
-        const combinedSnippet = {
-            title: `Combined Snippet (${combinedSnippets.length} parts)`,
-            content: "", // Not used - wrapper will handle combination
-            isCombined: true,
-            titles: combinedSnippets.map(s => s.title)
-        }
+        // Extract titles for direct signal emission
+        const titles = combinedSnippets.map(s => s.title)
         
         debugLog(`✅ Combination ready: ${combinedSnippets.length} snippets`)
-        debugLog(`🔗 Combined titles: ${combinedSnippet.titles.join(", ")}`)
-        snippetReady(combinedSnippet)
+        debugLog(`🔗 Combined titles: ${titles.join(", ")}`)
+        combineSnippets(titles)
         
         return true
     }

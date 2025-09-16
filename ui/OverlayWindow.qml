@@ -39,10 +39,10 @@ PanelWindow {
             window.debugLog(`🔄 Combining mode ${isActive ? 'activated' : 'deactivated'}`)
         }
         
-        onSnippetReady: function(combinedSnippet) {
-            // Combined snippet is ready - trigger selection like normal snippet
-            window.debugLog(`📋 Combined snippet ready: ${combinedSnippet.content.length} characters`)
-            window.snippetSelected(combinedSnippet)
+        onCombineSnippets: function(titles) {
+            // Combined snippets are ready - emit titles directly
+            window.debugLog(`📋 Combined snippets ready: ${titles.length} titles`)
+            window.combineSnippets(titles)
         }
         
         onAdditionFailed: function(error, errorType) {
@@ -95,6 +95,7 @@ PanelWindow {
     property bool hasSnippetsToDisplay: processedSnippets.length > 0
     
     signal snippetSelected(var snippet)
+    signal combineSnippets(var titles)
     signal dismissed()
     
     /**

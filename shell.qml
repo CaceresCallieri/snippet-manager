@@ -227,30 +227,14 @@ ShellRoot {
                 }
                 
                 try {
-                    // Check if this is a combined snippet using the isCombined flag
-                    if (snippet.isCombined && snippet.titles) {
-                        root.debugLog("🔗 Combined snippet detected - using individual titles...")
-                        
-                        // Use the titles array from the combined snippet
-                        const titlesString = snippet.titles.join(",")
-                        
-                        // Dispatch combined snippets event with comma-separated titles
-                        const eventData = "COMBINED_SNIPPETS_SELECTED:" + titlesString
-                        var command = ["hyprctl", "dispatch", "event", eventData]
-                        root.debugLog("🔧 Dispatching combined event: " + eventData)
-                        
-                        Quickshell.execDetached(command)
-                        root.debugLog("✅ Combined snippets event dispatched successfully")
-                    } else {
-                        // Single snippet - use existing logic
-                        root.debugLog("🚀 Dispatching single snippet event...")
-                        const eventData = "SNIPPET_SELECTED:" + snippet.title
-                        var command = ["hyprctl", "dispatch", "event", eventData]
-                        root.debugLog("🔧 Dispatching event: " + eventData)
-                        
-                        Quickshell.execDetached(command)
-                        root.debugLog("✅ Single snippet event dispatched successfully")
-                    }
+                    // Single snippet - dispatch single snippet event
+                    root.debugLog("🚀 Dispatching single snippet event...")
+                    const eventData = "SNIPPET_SELECTED:" + snippet.title
+                    var command = ["hyprctl", "dispatch", "event", eventData]
+                    root.debugLog("🔧 Dispatching event: " + eventData)
+                    
+                    Quickshell.execDetached(command)
+                    root.debugLog("✅ Single snippet event dispatched successfully")
                 } catch (error) {
                     console.error("❌ Failed to dispatch Hyprland event:", error)
                     root.notifyUser("Snippet Manager Error", 
@@ -259,6 +243,29 @@ ShellRoot {
                     
                     // TODO: Fallback to direct injection if event dispatch fails
                     // For now, we exit gracefully to prevent hanging UI
+                }
+                
+                // Exit immediately - wrapper will handle injection via event
+                Qt.quit()
+            }
+            
+            onCombineSnippets: function(titles) {
+                root.debugLog("🔗 Combining snippets: " + titles.join(", "))
+                
+                try {
+                    // Dispatch combined snippets event with comma-separated titles
+                    const titlesString = titles.join(",")
+                    const eventData = "COMBINED_SNIPPETS_SELECTED:" + titlesString
+                    var command = ["hyprctl", "dispatch", "event", eventData]
+                    root.debugLog("🔧 Dispatching combined event: " + eventData)
+                    
+                    Quickshell.execDetached(command)
+                    root.debugLog("✅ Combined snippets event dispatched successfully")
+                } catch (error) {
+                    console.error("❌ Failed to dispatch combined snippets event:", error)
+                    root.notifyUser("Snippet Manager Error", 
+                                  "Failed to dispatch combined event: " + error.message, 
+                                  "critical")
                 }
                 
                 // Exit immediately - wrapper will handle injection via event
