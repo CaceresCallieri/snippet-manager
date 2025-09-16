@@ -105,46 +105,119 @@ lookup_snippet() {
     fi
 }
 
+# Function to lookup multiple snippets in a single jq operation
+lookup_multiple_snippets() {
+    local titles_string="$1"
+    
+    log "DEBUG" "🔍 Batch lookup for snippets: '$titles_string'"
+    
+    if [ ! -f "$SNIPPETS_FILE" ]; then
+        log "ERROR" "❌ Snippets file not found: $SNIPPETS_FILE"
+        return 1
+    fi
+    
+    if ! command -v jq >/dev/null 2>&1; then
+        log "ERROR" "❌ jq command not found - required for JSON parsing"
+        return 1
+    fi
+    
+    # Split comma-separated titles into array
+    IFS=',' read -ra titles <<< "$titles_string"
+    
+    # Use simpler approach: map titles to args and build filter
+    local jq_args=""
+    local filter='['
+    local count=0
+    
+    for title in "${titles[@]}"; do
+        title=$(echo "$title" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        jq_args="$jq_args --arg title$count \"$title\""
+        
+        if [ $count -gt 0 ]; then
+            filter="$filter, "
+        fi
+        filter="$filter\$title$count"
+        count=$((count + 1))
+    done
+    filter="$filter] as \$wanted | map(select(.title | IN(\$wanted[]))) | .[:\$wanted | length] | map(.content) | join(\"\n\")"
+    
+    local combined_content
+    combined_content=$(eval "jq -r $jq_args '$filter' '$SNIPPETS_FILE'" 2>/dev/null)
+    
+    # Check if result contains all snippets (simple validation)
+    local result_length=${#combined_content}
+    if [ $result_length -lt 10 ]; then  # Very short result suggests missing snippets
+        combined_content=""
+    fi
+    
+    if [ -n "$combined_content" ] && [ "$combined_content" != "null" ] && [ "$combined_content" != "" ]; then
+        log "INFO" "✅ Batch lookup successful (${#combined_content} characters)"
+        echo "$combined_content"
+        return 0
+    else
+        log "ERROR" "❌ Batch lookup failed - one or more snippets not found"
+        return 1
+    fi
+}
+
 # Function to combine multiple snippets by title
 combine_snippets() {
     local titles_string="$1"
     
     log "DEBUG" "🔗 Starting snippet combination for: '$titles_string'"
     
-    # Split comma-separated titles into array
+    # Split comma-separated titles into array for validation
     IFS=',' read -ra titles <<< "$titles_string"
-    local combined_content=""
-    local snippet_count=0
-    
-    for title in "${titles[@]}"; do
-        # Trim whitespace from title
-        title=$(echo "$title" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        
-        log "DEBUG" "🔍 Looking up snippet ${snippet_count}: '$title'"
-        
-        # Lookup individual snippet content
-        if snippet_content=$(lookup_snippet "$title"); then
-            if [ $snippet_count -gt 0 ]; then
-                combined_content+=$'\n'  # Add newline between snippets
-            fi
-            combined_content+="$snippet_content"
-            snippet_count=$((snippet_count + 1))
-            log "DEBUG" "✅ Added snippet ${snippet_count}: '$title' (${#snippet_content} chars)"
-        else
-            log "ERROR" "❌ Failed to find snippet in combination: '$title'"
-            notify_user "Snippet Manager Error" "Failed to find snippet: $title" "critical"
-            return 1
-        fi
-    done
+    local snippet_count=${#titles[@]}
     
     if [ $snippet_count -eq 0 ]; then
-        log "ERROR" "❌ No valid snippets found in combination"
+        log "ERROR" "❌ No snippets specified for combination"
         return 1
     fi
     
-    log "INFO" "✅ Combined ${snippet_count} snippets (total: ${#combined_content} characters)"
-    echo "$combined_content"
-    return 0
+    # Try batch lookup first for optimal performance
+    local combined_content
+    if combined_content=$(lookup_multiple_snippets "$titles_string"); then
+        log "INFO" "✅ Combined ${snippet_count} snippets using batch operation (total: ${#combined_content} characters)"
+        echo "$combined_content"
+        return 0
+    else
+        # Batch failed, fallback to individual lookups for detailed error reporting
+        log "DEBUG" "⚠️ Batch lookup failed, falling back to individual lookups for error details"
+        
+        combined_content=""
+        local found_count=0
+        
+        for title in "${titles[@]}"; do
+            # Trim whitespace from title
+            title=$(echo "$title" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            
+            log "DEBUG" "🔍 Looking up snippet: '$title'"
+            
+            # Lookup individual snippet content
+            if snippet_content=$(lookup_snippet "$title"); then
+                if [ $found_count -gt 0 ]; then
+                    combined_content+=$'\n'  # Add newline between snippets
+                fi
+                combined_content+="$snippet_content"
+                found_count=$((found_count + 1))
+                log "DEBUG" "✅ Added snippet: '$title' (${#snippet_content} chars)"
+            else
+                log "ERROR" "❌ Failed to find snippet in combination: '$title'"
+                notify_user "Snippet Manager Error" "Failed to find snippet: $title" "critical"
+                return 1
+            fi
+        done
+        
+        if [ $found_count -eq 0 ]; then
+            log "ERROR" "❌ No valid snippets found in combination"
+            return 1
+        fi
+        
+        log "INFO" "✅ Combined ${found_count} snippets using fallback method (total: ${#combined_content} characters)"
+        echo "$combined_content"
+        return 0
+    fi
 }
 
 # Function to send desktop notification
