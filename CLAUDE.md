@@ -319,6 +319,14 @@ Component {
 - Clean separation: stdout contains only data, stderr contains only logging
 - Performance: Eliminates stdout/stderr mixing that causes injection delays
 
+### Wrapper Script Resource Management
+**Critical Pattern**: Proper process cleanup prevents resource leaks from socat connections.
+
+**Implementation**: Event listener tracks both listener subprocess and socat process PIDs for complete cleanup:
+- `SOCAT_PID=$(pgrep -f "socat.*UNIX-CONNECT.*$socket_path" | tail -1)` - Tracks socat process
+- Cleanup function kills socat process first, then listener subprocess
+- Prevents orphaned socat processes that would accumulate over repeated usage
+
 ### Combination Architecture
 **Design Pattern**: Title-only event system with wrapper-based combination logic eliminates virtual snippet issues.
 

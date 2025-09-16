@@ -271,7 +271,14 @@ cleanup() {
         fi
     fi
     
-    # Kill event listener if running
+    # Kill socat process and event listener if running
+    if [ -n "${SOCAT_PID:-}" ]; then
+        if kill -0 "$SOCAT_PID" 2>/dev/null; then
+            log "DEBUG" "🔪 Terminating socat process (PID: $SOCAT_PID)"
+            kill "$SOCAT_PID" 2>/dev/null || true
+        fi
+    fi
+    
     if [ -n "${LISTENER_PID:-}" ]; then
         if kill -0 "$LISTENER_PID" 2>/dev/null; then
             log "DEBUG" "🔪 Terminating event listener (PID: $LISTENER_PID)"
@@ -359,19 +366,26 @@ start_event_listener() {
     log "INFO" "👂 Starting Hyprland event listener..."
     log "DEBUG" "📡 Connecting to socket: $socket_path"
     
-    # Use the official Hyprland pattern from documentation
-    socat -U - UNIX-CONNECT:"$socket_path" | while read -r line; do
-        handle_event "$line"
-        
-        # Check if we should exit (result file was created)
-        if [ -f "/tmp/snippet-manager-result-$$" ]; then
-            log "DEBUG" "🔪 Event processing completed, exiting listener"
-            break
-        fi
-    done &
+    # Start socat in background and capture its PID
+    socat -U - UNIX-CONNECT:"$socket_path" | {
+        while read -r line; do
+            handle_event "$line"
+            
+            # Check if we should exit (result file was created)
+            if [ -f "/tmp/snippet-manager-result-$$" ]; then
+                log "DEBUG" "🔪 Event processing completed, exiting listener"
+                break
+            fi
+        done
+    } &
     
     LISTENER_PID=$!
-    log "DEBUG" "✅ Event listener started (PID: $LISTENER_PID)"
+    
+    # Find and store the socat process PID
+    sleep 0.1  # Give socat a moment to start
+    SOCAT_PID=$(pgrep -f "socat.*UNIX-CONNECT.*$socket_path" | tail -1)
+    
+    log "DEBUG" "✅ Event listener started (PID: $LISTENER_PID, socat PID: $SOCAT_PID)"
 }
 
 # Function to launch QuickShell UI
