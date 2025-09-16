@@ -66,6 +66,12 @@ QtObject {
         readonly property int maxContentLength: 10000
     }
 
+    // Notification System Limits
+    readonly property QtObject notifications: QtObject {
+        readonly property int maxNotificationHistory: 100
+        readonly property real cleanupPercentage: 0.2
+    }
+
     // UI Colors - Mac Tahoe Dark Mode
     readonly property QtObject colors: QtObject {
         readonly property color mainBackground: "#1c1c1e"

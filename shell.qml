@@ -34,7 +34,7 @@ ShellRoot {
     /**
      * Sends desktop notifications to user via notify-send command with throttling
      * Used for critical errors, warnings, and status updates that user needs to see.
-     * Implements simple counter-based throttling to prevent notification spam.
+     * Implements counter-based throttling with memory management to prevent notification spam.
      * 
      * @param {string} title - Notification title (appears in notification header)
      * @param {string} message - Notification message body
@@ -45,15 +45,31 @@ ShellRoot {
      * - Normal/Low notifications: Limited to 2 instances per unique title+message
      * - Prevents notification spam during repeated error conditions
      * 
+     * Memory management:
+     * - Automatically cleans up old notification entries when limit exceeded
+     * - Uses FIFO cleanup to maintain bounded memory usage
+     * - Preserves recent notification throttling behavior
+     * 
      * Side effects:
      * - Executes notify-send command via Quickshell.execDetached
-     * - Updates notificationCounts tracking object
+     * - Updates notificationCounts tracking object with cleanup when needed
      * - Logs error to console if notification sending fails
      * - No-op if notify-send command is not available on system
      */
     function notifyUser(title, message, urgency = "normal") {
         // Create unique key for this notification
         const notificationKey = title + "|" + message
+        
+        // Memory management: cleanup old entries if we have too many
+        const keys = Object.keys(notificationCounts)
+        if (keys.length > Constants.notifications.maxNotificationHistory) {
+            // Remove oldest entries (simple FIFO cleanup)
+            const entriesToRemove = Math.floor(Constants.notifications.maxNotificationHistory * Constants.notifications.cleanupPercentage)
+            keys.slice(0, entriesToRemove).forEach(key => {
+                delete notificationCounts[key]
+            })
+            root.debugLog(`🧹 Cleaned up ${entriesToRemove} old notification entries (${keys.length} -> ${Object.keys(notificationCounts).length})`)
+        }
         
         // Always allow critical notifications (important errors should never be suppressed)
         if (urgency !== "critical") {
