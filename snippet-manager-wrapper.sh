@@ -9,7 +9,21 @@ set -euo pipefail
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SNIPPETS_FILE="$SCRIPT_DIR/data/snippets.json"
-PID_FILE="/tmp/snippet-manager-wrapper.pid"
+
+# Directory and file paths
+readonly TEMP_DIR="${TMPDIR:-/tmp}"
+readonly PID_FILE="$TEMP_DIR/snippet-manager-wrapper.pid"
+readonly RESULT_FILE="$TEMP_DIR/snippet-manager-result-$$"
+
+# Timeout and timing configuration
+readonly EVENT_TIMEOUT=30           # Seconds to wait for snippet selection
+readonly QUICKSHELL_EXIT_DELAY=1    # Seconds to wait after QuickShell exits
+readonly SOCKET_CONNECT_DELAY=0.1   # Seconds for socket operations
+
+# Validation configuration
+readonly MIN_COMBINED_LENGTH=10      # Minimum length for combined snippet validation
+
+# Logging configuration
 DEBUG_MODE=true
 
 # Colors for output
@@ -146,7 +160,7 @@ lookup_multiple_snippets() {
     
     # Check if result contains all snippets (simple validation)
     local result_length=${#combined_content}
-    if [ $result_length -lt 10 ]; then  # Very short result suggests missing snippets
+    if [ $result_length -lt $MIN_COMBINED_LENGTH ]; then  # Very short result suggests missing snippets
         combined_content=""
     fi
     
@@ -288,7 +302,7 @@ cleanup() {
     
     # Remove PID file and result file
     rm -f "$PID_FILE"
-    rm -f "/tmp/snippet-manager-result-$$"
+    rm -f "$RESULT_FILE"
     
     log "DEBUG" "✅ Cleanup completed (exit code: $exit_code)"
     exit $exit_code
@@ -317,15 +331,15 @@ handle_event() {
                 log "DEBUG" "🚀 Starting text injection..."
                 if inject_text "$snippet_content"; then
                     log "INFO" "🎉 Snippet injection completed successfully"
-                    echo "SUCCESS" > "/tmp/snippet-manager-result-$$"
+                    echo "SUCCESS" > "$RESULT_FILE"
                 else
                     log "ERROR" "❌ Injection failed for: '$selected_title'"
-                    echo "FAILED" > "/tmp/snippet-manager-result-$$"
+                    echo "FAILED" > "$RESULT_FILE"
                 fi
             else
                 log "ERROR" "❌ Lookup failed for: '$selected_title'"
                 notify_user "Snippet Manager Error" "Failed to find snippet: $selected_title" "critical"
-                echo "FAILED" > "/tmp/snippet-manager-result-$$"
+                echo "FAILED" > "$RESULT_FILE"
             fi
             ;;
         custom\>\>COMBINED_SNIPPETS_SELECTED:*)
@@ -342,19 +356,19 @@ handle_event() {
                 log "DEBUG" "🚀 Starting combined text injection..."
                 if inject_text "$combined_content"; then
                     log "INFO" "🎉 Combined snippet injection completed successfully"
-                    echo "SUCCESS" > "/tmp/snippet-manager-result-$$"
+                    echo "SUCCESS" > "$RESULT_FILE"
                 else
                     log "ERROR" "❌ Combined injection failed for: '$selected_titles'"
-                    echo "FAILED" > "/tmp/snippet-manager-result-$$"
+                    echo "FAILED" > "$RESULT_FILE"
                 fi
             else
                 log "ERROR" "❌ Combination failed for: '$selected_titles'"
-                echo "FAILED" > "/tmp/snippet-manager-result-$$"
+                echo "FAILED" > "$RESULT_FILE"
             fi
             ;;
         custom\>\>SNIPPET_CANCELLED*)
             log "INFO" "❌ User cancelled selection"
-            echo "CANCELLED" > "/tmp/snippet-manager-result-$$"
+            echo "CANCELLED" > "$RESULT_FILE"
             ;;
     esac
 }
@@ -372,7 +386,7 @@ start_event_listener() {
             handle_event "$line"
             
             # Check if we should exit (result file was created)
-            if [ -f "/tmp/snippet-manager-result-$$" ]; then
+            if [ -f "$RESULT_FILE" ]; then
                 log "DEBUG" "🔪 Event processing completed, exiting listener"
                 break
             fi
@@ -382,7 +396,7 @@ start_event_listener() {
     LISTENER_PID=$!
     
     # Find and store the socat process PID
-    sleep 0.1  # Give socat a moment to start
+    sleep $SOCKET_CONNECT_DELAY  # Give socat a moment to start
     SOCAT_PID=$(pgrep -f "socat.*UNIX-CONNECT.*$socket_path" | tail -1)
     
     log "DEBUG" "✅ Event listener started (PID: $LISTENER_PID, socat PID: $SOCAT_PID)"
@@ -422,7 +436,7 @@ main() {
     start_event_listener
     
     # Give event listener a moment to establish connection
-    sleep 0.1
+    sleep $SOCKET_CONNECT_DELAY
     
     # Launch QuickShell UI
     launch_quickshell
@@ -432,8 +446,8 @@ main() {
     # 2. QuickShell to exit (user cancellation without event)
     log "DEBUG" "⏳ Waiting for snippet selection or QuickShell exit..."
     
-    local result_file="/tmp/snippet-manager-result-$$"
-    local timeout_seconds=30
+    local result_file="$RESULT_FILE"
+    local timeout_seconds=$EVENT_TIMEOUT
     local elapsed=0
     
     # Monitor for completion
@@ -461,7 +475,7 @@ main() {
         # Check if QuickShell exited without sending event
         if ! kill -0 "$QUICKSHELL_PID" 2>/dev/null; then
             log "DEBUG" "📋 QuickShell exited - waiting briefly for events..."
-            sleep 1  # Give events time to be processed
+            sleep $QUICKSHELL_EXIT_DELAY  # Give events time to be processed
             
             if [ -f "$result_file" ]; then
                 local result=$(cat "$result_file" 2>/dev/null)
@@ -474,7 +488,7 @@ main() {
             fi
         fi
         
-        sleep 0.1
+        sleep $SOCKET_CONNECT_DELAY
         elapsed=$((elapsed + 1))
     done
     
