@@ -45,12 +45,14 @@ Item {
     
     /**
      * Total character count of all selected snippet content
-     * Updated automatically when snippets are added or removed
+     * Reactive property that automatically recalculates when combinedSnippets changes
      * Used for size validation and user feedback
      * 
      * @type {number}
      */
-    property int combinedCharacterCount: 0
+    readonly property int combinedCharacterCount: {
+        return combinedSnippets.reduce((total, snippet) => total + snippet.content.length, 0)
+    }
     
     /**
      * Whether the size limit would be exceeded by adding another snippet
@@ -188,8 +190,6 @@ Item {
         newArray.push(snippet)
         combinedSnippets = newArray
         
-        updateCharacterCount()
-        
         // Enter combining mode if not already active
         if (!isCombiningMode) {
             enterCombiningMode()
@@ -253,14 +253,13 @@ Item {
      * Useful for starting a new combination while staying in combining mode
      * 
      * Side effects:
-     * - Clears combinedSnippets array and resets combinedCharacterCount to 0
+     * - Clears combinedSnippets array (combinedCharacterCount updates automatically)
      * - Maintains isCombiningMode state (user must explicitly exit mode)
      * - Logs clearing operation for debugging
      */
     function clearCombination() {
         const previousCount = combinedSnippets.length
         combinedSnippets = []
-        combinedCharacterCount = 0
         
         debugLog(`🧹 Cleared combination (${previousCount} snippets removed)`)
     }
@@ -327,8 +326,6 @@ Item {
         newArray.splice(index, 1)
         combinedSnippets = newArray
         
-        updateCharacterCount()
-        
         debugLog(`🗑️ Removed snippet at index ${index}: "${removedSnippet.title}"`)
         
         // Exit combining mode if no snippets remain
@@ -344,27 +341,4 @@ Item {
     // ============================================================================
     
     
-    /**
-     * Recalculates and updates the combined character count
-     * Called whenever combinedSnippets array changes
-     */
-    function updateCharacterCount() {
-        let totalSize = 0
-        for (let i = 0; i < combinedSnippets.length; i++) {
-            totalSize += combinedSnippets[i].content.length
-        }
-        combinedCharacterCount = totalSize
-    }
-    
-    // ============================================================================
-    // REACTIVE UPDATES
-    // ============================================================================
-    
-    /**
-     * Monitor changes to combinedSnippets array and update character count
-     * Ensures character count stays synchronized with snippet collection
-     */
-    onCombinedSnippetsChanged: {
-        updateCharacterCount()
-    }
 }
